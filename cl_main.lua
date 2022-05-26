@@ -1,33 +1,25 @@
 local isOpen = false
-local callSign = ""
---local PlayerData = {}
+local callSign = "I-00"
 
-ESX = nil
-
-Citizen.CreateThread(function()
-    while ESX == nil do
-        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-        Citizen.Wait(0)
-    end
+RegisterNetEvent('esx:playerLoaded')
+AddEventHandler('esx:playerLoaded', function(xPlayer)
+	ESX.PlayerData = xPlayer
+	ESX.PlayerLoaded = true
 end)
 
--- RegisterNetEvent('echorp:playerSpawned') -- Use this to grab player info on spawn.
--- AddEventHandler('echorp:playerSpawned', function(sentData)
---     PlayerData = sentData
--- end)
+RegisterNetEvent('esx:onPlayerLogout')
+AddEventHandler('esx:onPlayerLogout', function()
+	ESX.PlayerLoaded = false
+	ESX.PlayerData = {}
+end)
 
--- RegisterNetEvent('echorp:updateinfo')
--- AddEventHandler('echorp:updateinfo', function(toChange, targetData)
---     PlayerData[toChange] = targetData
--- end)
-
--- RegisterNetEvent('echorp:doLogout') -- Use this to logout.
--- AddEventHandler('echorp:doLogout', function(sentData)
---     PlayerData = {}
--- end)
+RegisterNetEvent('esx:setJob')
+AddEventHandler('esx:setJob', function(job)
+   ESX.PlayerData.job = job
+end)
 
 function EnableGUI(enable)
-    print("MDT Enable GUI", enable)
+    --print("MDT Enable GUI", enable)
     if enable then
         TriggerServerEvent('erp_mdt:opendashboard')
     end
@@ -35,7 +27,7 @@ function EnableGUI(enable)
     SendNUIMessage({
         type = "show",
         enable = enable,
-        job = ESX.GetPlayerData().job.name
+        job = ESX.PlayerData.job.name
     })
     isOpen = enable
     TriggerEvent('erp_mdt:animation')
@@ -46,19 +38,19 @@ function RefreshGUI()
     SendNUIMessage({
         type = "show",
         enable = false,
-        job = ESX.GetPlayerData().job.name
+        job = ESX.PlayerData.job.name
     })
     isOpen = false
 end
 
-RegisterCommand("restartmdt", function(source, args, rawCommand)
+--[[RegisterCommand("restartmdt", function(source, args, rawCommand)
     RefreshGUI()
-end, false)
+end, false)]]
 
 local tablet = 0
-local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
-local tabletAnim = "base"
-local tabletProp = prop_cs_tablet
+local tabletDict = "amb@code_human_in_bus_passenger_idles@female@tablet@idle_a"
+local tabletAnim = "idle_a"
+local tabletProp = "prop_cs_tablet"
 local tabletBone = 60309
 local tabletOffset = vector3(0.03, 0.002, -0.0)
 local tabletRot = vector3(10.0, 160.0, 0.0)
@@ -82,7 +74,7 @@ AddEventHandler('erp_mdt:animation', function()
     local tabletObj = CreateObject(tabletProp, 0.0, 0.0, 0.0, true, true, false)
     local tabletBoneIndex = GetPedBoneIndex(plyPed, tabletBone)
 
-    TriggerEvent('actionbar:setEmptyHanded')
+    --TriggerEvent('actionbar:setEmptyHanded')
     AttachEntityToEntity(tabletObj, plyPed, tabletBoneIndex, tabletOffset.x, tabletOffset.y, tabletOffset.z,
         tabletRot.x, tabletRot.y, tabletRot.z, true, false, false, false, 2, true)
     SetModelAsNoLongerNeeded(tabletProp)
@@ -104,9 +96,9 @@ end)
 
 local function CurrentDuty(duty)
     if duty == 1 then
-        return "10-41"
+        return "10-8"
     end
-    return "10-42"
+    return "10-7"
 end
 
 RegisterNetEvent('erp_mdt:dashboardbulletin')
@@ -160,12 +152,12 @@ AddEventHandler('erp_mdt:newBulletin', function(ignoreId, sentData, job)
     if ignoreId == GetPlayerServerId(PlayerId()) then
         return
     end
-    if job == 'police' and ESX.GetPlayerData().job.name == 'police' then
+    if job == 'police' and ESX.PlayerData.job.name == 'police' then
         SendNUIMessage({
             type = "newBulletin",
             data = sentData
         })
-    elseif job == ESX.GetPlayerData().job.name then
+    elseif job == ESX.PlayerData.job.name then
         SendNUIMessage({
             type = "newBulletin",
             data = sentData
@@ -178,12 +170,12 @@ AddEventHandler('erp_mdt:deleteBulletin', function(ignoreId, sentData, job)
     if ignoreId == GetPlayerServerId(PlayerId()) then
         return
     end
-    if job == 'police' and ESX.GetPlayerData().job.name == 'police' then
+    if job == 'police' and ESX.PlayerData.job.name == 'police' then
         SendNUIMessage({
             type = "deleteBulletin",
             data = sentData
         })
-    elseif job == ESX.GetPlayerData().job.name then
+    elseif job == ESX.PlayerData.job.name then
         SendNUIMessage({
             type = "deleteBulletin",
             data = sentData
@@ -193,7 +185,7 @@ end)
 
 RegisterNetEvent('erp_mdt:open')
 AddEventHandler('erp_mdt:open', function(job, jobLabel, lastname, firstname)
-    print('testopen')
+    --print('testopen')
     open = true
     EnableGUI(open)
     local x, y, z = table.unpack(GetEntityCoords(PlayerPedId()))
@@ -239,7 +231,7 @@ end)
 
 RegisterNetEvent('erp_mdt:exitMDT')
 AddEventHandler('erp_mdt:exitMDT', function()
-    print("Calling for exit")
+    --print("Calling for exit")
     open = false
     EnableGUI(open)
 end)
@@ -984,16 +976,10 @@ AddEventHandler('erp_mdt:getPenalCode', function(titles, penalcode)
 end)
 
 RegisterNetEvent('erp_mdt:getActiveUnits')
-AddEventHandler('erp_mdt:getActiveUnits', function(lspd, bcso, sast, sasp, doc, sapr, pa, ems)
+AddEventHandler('erp_mdt:getActiveUnits', function(lspd, ems)
     SendNUIMessage({
         type = "getActiveUnits",
         lspd = lspd,
-        bcso = bcso,
-        sast = sast,
-        doc = doc,
-        sasp = sasp,
-        sapr = sapr,
-        pa = pa,
         ems = ems
     })
 end)
@@ -1008,27 +994,7 @@ RegisterNUICallback("setCallsign", function(data, cb)
     cb(true)
 end)
 
-RegisterNUICallback("setRadio", function(data, cb)
-    TriggerServerEvent('erp_mdt:setRadio', data.cid, data.newradio)
-    cb(true)
-end)
-
-RegisterNetEvent('erp_mdt:setRadio')
-AddEventHandler('erp_mdt:setRadio', function(radio, name)
-    if radio then
-        -- Replace with your inventory check
-        --[[if (not exports["erp-inventory"]:hasEnoughOfItem('radio',1,false)) then
-            exports['erp_notifications']:SendAlert('inform', 'Missing radio, '..name..' tried to set your radio frequency.', 7500)
-            return
-        end]]
-        exports["pma-voice"]:setVoiceProperty("radioEnabled", true)
-        exports["pma-voice"]:setRadioChannel(tonumber(radio))
-        exports['erp_notifications']:SendAlert('inform', 'Your radio frequency was set to: ' .. radio .. ' MHz, by ' ..
-            name .. '', 7500)
-    end
-end)
-
-RegisterNetEvent('erp_mdt:sig100')
+--[[RegisterNetEvent('erp_mdt:sig100')
 AddEventHandler('erp_mdt:sig100', function(radio, type)
     local job = ESX.GetPlayerData().job
     if (job.name == 'police' or job.name == 'ambulance') and job.duty == 1 then
@@ -1040,7 +1006,7 @@ AddEventHandler('erp_mdt:sig100', function(radio, type)
     if not type then
         exports['erp_notifications']:PersistentAlert("END", "signall100-" .. radio)
     end
-end)
+end)]]
 
 RegisterNetEvent('erp_mdt:updateCallsign')
 AddEventHandler('erp_mdt:updateCallsign', function(callsign)
@@ -1267,58 +1233,3 @@ function tprint(t, s)
         end
     end
 end
-
-RegisterNUICallback("impoundVehicle", function(data, cb)
-    local found = 0
-    local plate = string.upper(string.gsub(data['plate'], "^%s*(.-)%s*$", "%1"))
-    local vehicles = GetGamePool('CVehicle')
-
-    for k, v in pairs(vehicles) do
-        local plt = string.upper(string.gsub(GetVehicleNumberPlateText(v), "^%s*(.-)%s*$", "%1"))
-        if plt == plate then
-            local dist = #(GetEntityCoords(PlayerPedId()) - GetEntityCoords(v))
-            if dist < 10.0 then
-                found = VehToNet(v)
-            end
-            break
-        end
-    end
-
-    if found == 0 then
-        -- notif system here.
-        return
-    end
-
-    SendNUIMessage({
-        type = "greenShit"
-    })
-    TriggerServerEvent('erp_mdt:impoundVehicle', data, found)
-    cb('okbb')
-end)
-
-RegisterNetEvent('erp_mdt:notifyMechanics')
-AddEventHandler('erp_mdt:notifyMechanics', function(sentData)
-    --[[if exports["erp-jobsystem"]:CanTow() then
-        TriggerServerEvent('erp-sounds:PlayWithinDistance', 1.5, 'beep', 0.4)
-        TriggerEvent('erp_phone:sendNotification', {img = 'vehiclenotif.png', title = "Impound", content = "New vehicle is ready to be impounded!", time = 5000 })
-    end]]
-end)
-
-RegisterNUICallback("removeImpound", function(data, cb)
-    TriggerServerEvent('erp_mdt:removeImpound', data['plate'])
-    cb('ok')
-end)
-
-RegisterNUICallback("statusImpound", function(data, cb)
-    TriggerServerEvent('erp_mdt:statusImpound', data['plate'])
-    cb('ok')
-end)
-
-RegisterNetEvent('erp_mdt:statusImpound')
-AddEventHandler('erp_mdt:statusImpound', function(data, plate)
-    SendNUIMessage({
-        type = "statusImpound",
-        data = data,
-        plate = plate
-    })
-end)
