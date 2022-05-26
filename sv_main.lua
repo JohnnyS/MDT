@@ -1,7 +1,3 @@
-ESX = nil
-
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-
 -- (Start) Opening the MDT and sending data
 AddEventHandler('erp_mdt:AddLog', function(text)
     exports.oxmysql:executeSync('INSERT INTO `pd_logs` (`text`, `time`) VALUES (@text, @time)', {
@@ -22,34 +18,14 @@ local function GetIdentifierFromCid(cid, cb)
     }))
 end
 
-RegisterCommand("testmdt", function(source, args, rawCommand)
-    TriggerEvent('erp_mdt:open', source)
-	print('test')
-end, false)
-
-RegisterCommand("showmdt", function(source, args, rawCommand)
+RegisterCommand("mdt", function(source, args, rawCommand)
     TriggerEvent('erp_mdt:open', source)
 end, false)
 
-local known100s = {}
-
-RegisterCommand("signal100", function(source, args, rawCommand)
-    local xPlayer = ESX.GetPlayerFromId(source)
-    if xPlayer then
-        if xPlayer.job and
-            (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance' or xPlayer.job.name == 'doj')) then
-            local channel = tonumber(args[1])
-            if known100s[channel] then
-                known100s[channel] = nil
-                TriggerClientEvent('erp_mdt:sig100', -1, channel, false)
-            else
-                known100s[channel] = true
-                TriggerClientEvent('erp_mdt:sig100', -1, channel, true)
-            end
-
-        end
-    end
-end, false)
+--[[ESX.RegisterCommand({'mdt', 'openmdt'}, 'user', function(xPlayer, args, showError)
+    local source = xPlayer.source
+    TriggerEvent("erp_mdt:open", source)
+end, false, {help = ('Police Mobile Data Terminal')})]]
 
 RegisterNetEvent('erp_mdt:open')
 AddEventHandler('erp_mdt:open', function(source)
@@ -57,17 +33,6 @@ AddEventHandler('erp_mdt:open', function(source)
     if xPlayer then
         if xPlayer.job and (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance' or xPlayer.job.name == 'doj')) then
             TriggerClientEvent('erp_mdt:open', xPlayer.source, xPlayer.job.name, xPlayer.job.grade_label, xPlayer.variables.lastName, xPlayer.variables.firstName)
-        end
-    end
-end)
-
-RegisterNetEvent('echorp:playerSpawned')
-AddEventHandler('echorp:playerSpawned', function(PlayerData)
-    local cid = PlayerData['cid']
-    if cid then
-        local callsign = GetCallsign(cid)
-        if callsign then
-            TriggerClientEvent('erp_mdt:updateCallsign', PlayerData['source'], callsign)
         end
     end
 end)
@@ -86,123 +51,33 @@ exports('GetDuty', GetDuty)
 AddEventHandler('erp_mdt:open', function(source)
     local xPlayer = ESX.GetPlayerFromId(source)
     if xPlayer then
-        if xPlayer.job and
-            (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance' or xPlayer.job.name == 'doj')) then
+        if xPlayer.job and (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance')) then
             local cs = GetCallsign(xPlayer.getIdentifier())
-            if cs then
-                TriggerClientEvent('erp_mdt:updateCallsign', xPlayer.source, cs[1].callsign)
-            end
-            local police, bcso, sast, sasp, doc, sapr, pa, ems = {}, {}, {}, {}, {}, {}, {}, {}
+                if cs then
+                    TriggerClientEvent('erp_mdt:updateCallsign', xPlayer.source, cs[1].callsign)
+                end
+            local police, ems = {}, {}
             local players = ESX.GetExtendedPlayers()
             for k, v in pairs(players) do
 			local callsign = GetCallsign(v.identifier)
 			local onduty = GetDuty(v.identifier)
                 if v.job.name == 'police' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
                     table.insert(police, {
                         cid = v.identifier,
                         name = v.name,
                         callsign = callsign[1].callsign,
                         duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
-                    })
-                elseif v.job.name == 'bcso' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(bcso, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
-                    })
-                elseif v.job.name == 'sast' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(sast, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
-                    })
-                elseif v.job.name == 'sasp' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(sasp, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
-                    })
-                elseif v.job.name == 'doc' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(doc, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
-                    })
-                elseif v.job.name == 'sapr' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(sapr, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio
-                    })
-                elseif v.job.name == 'pa' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
-                    table.insert(pa, {
-                        cid = v.identifier,
-                        name = v.name,
-                        callsign = callsign[1].callsign,
-                        duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
                     })
                 elseif v.job.name == 'ambulance' then
-                    local Radio = Player(v.source).state.radioChannel or 0
-                    if Radio > 100 then
-                        Radio = 0
-                    end
                     table.insert(ems, {
                         cid = v.identifier,
                         name = v.name,
                         callsign = callsign[1].callsign,
                         duty = onduty[1].duty,
-                        radio = Radio,
-                        sig100 = known100s[Radio]
                     })
                 end
             end
-            TriggerClientEvent('erp_mdt:getActiveUnits', source, police, bcso, sast, sasp, doc, sapr, pa, ems)
+            TriggerClientEvent('erp_mdt:getActiveUnits', source, police, ems)
         end
     end
 end)
@@ -307,7 +182,6 @@ AddEventHandler('erp_mdt:searchProfile', function(sentData)
                         for i = 1, #people do
                             
                             people[i]['warrant'] = false
-
                             people[i]['theory'] = false
                             people[i]['car'] = false
                             people[i]['bike'] = false
@@ -315,7 +189,7 @@ AddEventHandler('erp_mdt:searchProfile', function(sentData)
 
                             people[i]['weapon'] = false
                             people[i]['hunting'] = false
-                            people[i]['pilot'] = false
+                            people[i]['fishing'] = false
                             people[i]['convictions'] = 0
                             people[i]['pp'] = PpPpPpic(people[i]['sex'], people[i]['profilepic'])
 
@@ -349,8 +223,8 @@ AddEventHandler('erp_mdt:searchProfile', function(sentData)
                                             people[i]['truck'] = true
                                         elseif licenseinfo[suckdick]['type'] == 'hunting' then
                                             people[i]['hunting'] = true
-                                        elseif licenseinfo[suckdick]['type'] == 'pilot' then
-                                            people[i]['pilot'] = true
+                                        elseif licenseinfo[suckdick]['type'] == 'fishing' then
+                                            people[i]['fishing'] = true
                                         end
                                     end
                                 end
@@ -373,7 +247,7 @@ AddEventHandler('erp_mdt:searchProfile', function(sentData)
                             people[i]['truck'] = false
                             people[i]['weapon'] = false
                             people[i]['hunting'] = false
-                            people[i]['pilot'] = false
+                            people[i]['fishing'] = false
                             people[i]['pp'] = PpPpPpic(people[i]['sex'], people[i]['profilepic'])
                             GetLicenseInfo(people[i]['identifier'], function(licenseinfo)
                                 if licenseinfo and #licenseinfo > 0 then
@@ -390,8 +264,8 @@ AddEventHandler('erp_mdt:searchProfile', function(sentData)
                                             people[i]['truck'] = true
                                         elseif licenseinfo[suckdick]['type'] == 'hunting' then
                                             people[i]['hunting'] = true
-                                        elseif licenseinfo[suckdick]['type'] == 'pilot' then
-                                            people[i]['pilot'] = true
+                                        elseif licenseinfo[suckdick]['type'] == 'fishing' then
+                                            people[i]['fishing'] = true
                                         end
                                     end
                                 end
@@ -579,7 +453,8 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                     ["@id"] = sentId
                 }, function(user)
                     if user and user[1] then
-
+                        --print(json.encode(user))
+                        --print("1")
                         local function PpPpPpic(sex, profilepic)
                             if profilepic then
                                 return profilepic
@@ -588,8 +463,9 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                 return "img/female.png"
                             end
                             return "img/male.png"
+                           
                         end
-
+                        --print("2")
                         local object = {
                             cid = user[1]['id'],
 							identifier = user[1]['identifier'],
@@ -605,14 +481,15 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                             truck = false,
                             weapon = false,
                             hunting = false,
-                            pilot = false,
+                            fishing = false,
                             tags = {},
                             vehicles = {},
                             properties = {},
                             gallery = {},
                             convictions = {}
                         }
-
+                        --print("3")
+                        --print(object.identifier)
                         -- TriggerEvent('echorp:getJobInfo', object['job'], function(res)
                             -- if res then
                                 -- object['job'] = res['label']
@@ -629,6 +506,7 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                         end
                                     end
                                 end
+                                --print("4")
                             end
                         end)
 
@@ -639,6 +517,7 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                 object['policemdtinfo'] = information[1]['information']
                                 object['tags'] = json.decode(information[1]['tags'])
                                 object['gallery'] = json.decode(information[1]['gallery'])
+                                --print("5")
                             end
                         end) -- Tags, Gallery, User Information
 
@@ -657,10 +536,11 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                         object['truck'] = true
                                     elseif licenseinfo[suckdick]['type'] == 'hunting' then
                                         object['hunting'] = true
-                                    elseif licenseinfo[suckdick]['type'] == 'pilot' then
-                                        object['pilot'] = true
+                                    elseif licenseinfo[suckdick]['type'] == 'fishing' then
+                                        object['fishing'] = true
                                     end
                                 end
+                                --print("6")
                             end
                         end) -- Licenses
 
@@ -679,19 +559,31 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                 })
                             end
                             object['vehicles'] = vehicleInfo
-
+                            --print("7")
                         end) -- Vehicles
 
                         -- local houses = exports['erp-housing']:GetHouses()
-                        local myHouses = {}
-                        --[[for i=1, #houses do
-							local thisHouse = houses[i]
-							if thisHouse['cid'] == cid then
-								table.insert(myHouses, thisHouse)
-							end 
-						end]]
-
-                        object['properties'] = myHouses
+                        --print("7.5")
+                        --local tPlayer = ESX.GetPlayerFromIdentifier(object.identifier)
+                        --if tPlayer then
+                            --local houses = exports.SSCompleteHousing:GetOwnedHouses(object)
+                            --print(houses)
+                            --print("8")
+                            --local myHouses = {}
+                            --print("8.5")
+                            --[[for i=1, #houses do
+                                print("9")
+                                local thisHouse = houses[i]
+                                print(thisHouse)
+                                if thisHouse['cid'] == cid then
+                                    print("10")
+                                    table.insert(myHouses, thisHouse)
+                                    print("House print")
+                                end 
+                            end]]
+                            --object['properties'] = houses
+                            --TriggerClientEvent('erp_mdt:getProfileData', xPlayer.source, object)
+                        --end
                         TriggerClientEvent('erp_mdt:getProfileData', xPlayer.source, object)
                     end
                 end)
@@ -728,7 +620,7 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                             truck = false,
                             weapon = false,
                             hunting = false,
-                            pilot = false,
+                            fishing = false,
                             tags = {},
                             properties = {},
                             gallery = {}
@@ -763,8 +655,8 @@ AddEventHandler('erp_mdt:getProfileData', function(sentId)
                                         object['truck'] = true
                                     elseif licenseinfo[suckdick]['type'] == 'hunting' then
                                         object['hunting'] = true
-                                    elseif licenseinfo[suckdick]['type'] == 'pilot' then
-                                        object['pilot'] = true
+                                    elseif licenseinfo[suckdick]['type'] == 'fishing' then
+                                        object['fishing'] = true
                                     end
                                 end
                             end
@@ -977,12 +869,36 @@ AddEventHandler('erp_mdt:updateLicense', function(cid, type, status)
     local xPlayer = ESX.GetPlayerFromId(source)
     GetIdentifierFromCid(cid, function(res) licensecid = res[1].identifier	end)
     if xPlayer then
-        if xPlayer.job and (xPlayer.job.name == 'police' or (xPlayer.job.name == 'doj' and xPlayer.job.grade >= 8)) then
+        if xPlayer.job and (xPlayer.job.name == 'police' and xPlayer.job.grade ~= 0) then
             if status == 'give' then
-				exports.oxmysql:executeSync('INSERT INTO user_licenses (type, owner, status) VALUES(@type, @owner, @status)', {['@type'] = type, ['@owner'] = licensecid, ['@status'] = 1})
+                if xPlayer.job.grade >= 3 then
+				    exports.oxmysql:executeSync('INSERT INTO user_licenses (type, owner) VALUES(@type, @owner)', {['@type'] = type, ['@owner'] = licensecid})
+                else
+                    TriggerClientEvent('t-notify:client:Custom', xPlayer.source, {
+                        style  =  'error',
+                        duration  =  5000,
+                        message  =  'You are not authorized to give license, contact a higher up',
+                        sound  =  true
+                    })
+                end
             elseif status == 'revoke' then
-			exports.oxmysql:executeSync('DELETE FROM user_licenses WHERE owner = @identifier AND type = @type', {['@identifier'] = licensecid, ['@type'] = type})
+			    exports.oxmysql:executeSync('DELETE FROM user_licenses WHERE owner = @identifier AND type = @type', {['@identifier'] = licensecid, ['@type'] = type})
             end
+        elseif xPlayer.job and (xPlayer.job.name == 'police' and xPlayer.job.grade == 0) then
+            TriggerClientEvent('t-notify:client:Custom', xPlayer.source, {
+                style  =  'error',
+                duration  =  5000,
+                message  =  'You are unable to perform this action due to your rank, contact a FTO',
+                sound  =  true
+            })
+        elseif xPlayer.job and (xPlayer.job.name ~= 'police') then
+            exports.JD_logs:createLog({
+                EmbedMessage = "**MODDER** \n\n Job Locked Event Triggered when not the job",
+                player_id = xPlayer.source,
+                channel = "Security",
+                screenshot = false
+            })
+            TriggerEvent("EasyAdmin:addBan", source, '[#JL-P] The pigs caught you oinking') 
         end
     end
 end)
@@ -1280,121 +1196,120 @@ AddEventHandler('erp_mdt:getBoloData', function(sentId)
 end)
 
 RegisterNetEvent('erp_mdt:newBolo')
-AddEventHandler('erp_mdt:newBolo',
-    function(existing, id, title, plate, owner, individual, detail, tags, gallery, officersinvolved, time)
-        if id then
-            local xPlayer = ESX.GetPlayerFromId(source)
-            if xPlayer then
-                if xPlayer.job and (xPlayer.job.name == 'police' or xPlayer.job.name == 'doj') then
+AddEventHandler('erp_mdt:newBolo', function(existing, id, title, plate, owner, individual, detail, tags, gallery, officersinvolved, time)
+    if id then
+        local xPlayer = ESX.GetPlayerFromId(source)
+        if xPlayer then
+            if xPlayer.job and (xPlayer.job.name == 'police' or xPlayer.job.name == 'doj') then
 
-                    local function InsertBolo()
-                        exports.oxmysql:insert(
-                            'INSERT INTO `pd_bolos` (`title`, `author`, `plate`, `owner`, `individual`, `detail`, `tags`, `gallery`, `officersinvolved`, `time`) VALUES (@title, @author, @plate, @owner, @individual, @detail, @tags, @gallery, @officersinvolved, @time)',
-                            {
-                                ["@title"] = title,
-                                ["@author"] = xPlayer.name,
-                                ["@plate"] = plate,
-                                ["@owner"] = owner,
-                                ["@individual"] = individual,
-                                ["@detail"] = detail,
-                                ["@tags"] = json.encode(tags),
-                                ["@gallery"] = json.encode(gallery),
-                                ["@officersinvolved"] = json.encode(officersinvolved),
-                                ["@time"] = tostring(time)
-                            }, function(r)
-                                if r then
-                                    TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, r)
-                                    TriggerEvent('erp_mdt:AddLog', "A new BOLO was created by " .. xPlayer.name ..
-                                        " with the title (" .. title .. ") and ID (" .. id .. ")")
-                                end
-                            end)
-                    end
+                local function InsertBolo()
+                    exports.oxmysql:insert(
+                        'INSERT INTO `pd_bolos` (`title`, `author`, `plate`, `owner`, `individual`, `detail`, `tags`, `gallery`, `officersinvolved`, `time`) VALUES (@title, @author, @plate, @owner, @individual, @detail, @tags, @gallery, @officersinvolved, @time)',
+                        {
+                            ["@title"] = title,
+                            ["@author"] = xPlayer.name,
+                            ["@plate"] = plate,
+                            ["@owner"] = owner,
+                            ["@individual"] = individual,
+                            ["@detail"] = detail,
+                            ["@tags"] = json.encode(tags),
+                            ["@gallery"] = json.encode(gallery),
+                            ["@officersinvolved"] = json.encode(officersinvolved),
+                            ["@time"] = tostring(time)
+                        }, function(r)
+                            if r then
+                                TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, r)
+                                TriggerEvent('erp_mdt:AddLog', "A new BOLO was created by " .. xPlayer.name ..
+                                    " with the title (" .. title .. ") and ID (" .. id .. ")")
+                            end
+                        end)
+                end
 
-                    local function UpdateBolo()
-                        exports.oxmysql:update(
-                            "UPDATE pd_bolos SET `title`=:title, plate=:plate, owner=:owner, individual=:individual, detail=:detail, tags=:tags, gallery=:gallery, officersinvolved=:officersinvolved WHERE `id`= @id LIMIT 1",
-                            {
-                                ["@title"] = title,
-                                ["@plate"] = plate,
-                                ["@owner"] = owner,
-                                ["@individual"] = individual,
-                                ["@detail"] = detail,
-                                ["@tags"] = json.encode(tags),
-                                ["@gallery"] = json.encode(gallery),
-                                ["@officersinvolved"] = json.encode(officersinvolved),
-                                ["@id"] = id
-                            }, function(r)
-                                if r then
-                                    TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, id)
-                                    TriggerEvent('erp_mdt:AddLog', "A BOLO was updated by " .. xPlayer.name ..
-                                        " with the title (" .. title .. ") and ID (" .. id .. ")")
-                                end
-                            end)
-                    end
+                local function UpdateBolo()
+                    exports.oxmysql:update(
+                        "UPDATE pd_bolos SET `title`=:title, plate=:plate, owner=:owner, individual=:individual, detail=:detail, tags=:tags, gallery=:gallery, officersinvolved=:officersinvolved WHERE `id`= @id LIMIT 1",
+                        {
+                            ["@title"] = title,
+                            ["@plate"] = plate,
+                            ["@owner"] = owner,
+                            ["@individual"] = individual,
+                            ["@detail"] = detail,
+                            ["@tags"] = json.encode(tags),
+                            ["@gallery"] = json.encode(gallery),
+                            ["@officersinvolved"] = json.encode(officersinvolved),
+                            ["@id"] = id
+                        }, function(r)
+                            if r then
+                                TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, id)
+                                TriggerEvent('erp_mdt:AddLog', "A BOLO was updated by " .. xPlayer.name ..
+                                    " with the title (" .. title .. ") and ID (" .. id .. ")")
+                            end
+                        end)
+                end
 
-                    if existing then
-                        UpdateBolo()
-                    elseif not existing then
-                        InsertBolo()
-                    end
-                elseif xPlayer.job and (xPlayer.job.name == 'ambulance') then
+                if existing then
+                    UpdateBolo()
+                elseif not existing then
+                    InsertBolo()
+                end
+            elseif xPlayer.job and (xPlayer.job.name == 'ambulance') then
 
-                    local function InsertBolo()
-                        exports.oxmysql:insert(
-                            'INSERT INTO `ems_icu` (`title`, `author`, `plate`, `owner`, `individual`, `detail`, `tags`, `gallery`, `officersinvolved`, `time`) VALUES (:title, :author, :plate, :owner, :individual, :detail, :tags, :gallery, :officersinvolved, :time)',
-                            {
-                                title = title,
-                                author = xPlayer.name,
-                                plate = plate,
-                                owner = owner,
-                                individual = individual,
-                                detail = detail,
-                                tags = json.encode(tags),
-                                gallery = json.encode(gallery),
-                                officersinvolved = json.encode(officersinvolved),
-                                time = tostring(time)
-                            }, function(r)
-                                if r then
-                                    TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, r)
-                                    TriggerEvent('erp_mdt:AddLog',
-                                        "A new ICU Check-in was created by " .. xPlayer.name .. " with the title (" ..
-                                            title .. ") and ID (" .. id .. ")")
-                                end
-                            end)
-                    end
+                local function InsertBolo()
+                    exports.oxmysql:insert(
+                        'INSERT INTO `ems_icu` (`title`, `author`, `plate`, `owner`, `individual`, `detail`, `tags`, `gallery`, `officersinvolved`, `time`) VALUES (:title, :author, :plate, :owner, :individual, :detail, :tags, :gallery, :officersinvolved, :time)',
+                        {
+                            title = title,
+                            author = xPlayer.name,
+                            plate = plate,
+                            owner = owner,
+                            individual = individual,
+                            detail = detail,
+                            tags = json.encode(tags),
+                            gallery = json.encode(gallery),
+                            officersinvolved = json.encode(officersinvolved),
+                            time = tostring(time)
+                        }, function(r)
+                            if r then
+                                TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, r)
+                                TriggerEvent('erp_mdt:AddLog',
+                                    "A new ICU Check-in was created by " .. xPlayer.name .. " with the title (" ..
+                                        title .. ") and ID (" .. id .. ")")
+                            end
+                        end)
+                end
 
-                    local function UpdateBolo()
-                        exports.oxmysql:update(
-                            "UPDATE `ems_icu` SET `title`=:title, plate=:plate, owner=:owner, individual=:individual, detail=:detail, tags=:tags, gallery=:gallery, officersinvolved=:officersinvolved WHERE `id`= @id LIMIT 1",
-                            {
-                                title = title,
-                                plate = plate,
-                                owner = owner,
-                                individual = individual,
-                                detail = detail,
-                                tags = json.encode(tags),
-                                gallery = json.encode(gallery),
-                                officersinvolved = json.encode(officersinvolved),
-                                id = id
-                            }, function(affectedRows)
-                                if affectedRows > 0 then
-                                    TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, id)
-                                    TriggerEvent('erp_mdt:AddLog',
-                                        "A ICU Check-in was updated by " .. xPlayer.name .. " with the title (" ..
-                                            title .. ") and ID (" .. id .. ")")
-                                end
-                            end)
-                    end
+                local function UpdateBolo()
+                    exports.oxmysql:update(
+                        "UPDATE `ems_icu` SET `title`=:title, plate=:plate, owner=:owner, individual=:individual, detail=:detail, tags=:tags, gallery=:gallery, officersinvolved=:officersinvolved WHERE `id`= @id LIMIT 1",
+                        {
+                            title = title,
+                            plate = plate,
+                            owner = owner,
+                            individual = individual,
+                            detail = detail,
+                            tags = json.encode(tags),
+                            gallery = json.encode(gallery),
+                            officersinvolved = json.encode(officersinvolved),
+                            id = id
+                        }, function(affectedRows)
+                            if affectedRows > 0 then
+                                TriggerClientEvent('erp_mdt:boloComplete', xPlayer.source, id)
+                                TriggerEvent('erp_mdt:AddLog',
+                                    "A ICU Check-in was updated by " .. xPlayer.name .. " with the title (" ..
+                                        title .. ") and ID (" .. id .. ")")
+                            end
+                        end)
+                end
 
-                    if existing then
-                        UpdateBolo()
-                    elseif not existing then
-                        InsertBolo()
-                    end
+                if existing then
+                    UpdateBolo()
+                elseif not existing then
+                    InsertBolo()
                 end
             end
         end
-    end)
+    end
+end)
 
 RegisterNetEvent('erp_mdt:deleteBolo')
 AddEventHandler('erp_mdt:deleteBolo', function(id)
@@ -1560,8 +1475,7 @@ AddEventHandler('erp_mdt:searchReports', function(sentSearch)
 end)
 
 RegisterNetEvent('erp_mdt:newReport')
-AddEventHandler('erp_mdt:newReport',
-    function(existing, id, title, reporttype, detail, tags, gallery, officers, civilians, time)
+AddEventHandler('erp_mdt:newReport', function(existing, id, title, reporttype, detail, tags, gallery, officers, civilians, time)
         if id then
             local xPlayer = ESX.GetPlayerFromId(source)
             if xPlayer then
@@ -1722,9 +1636,9 @@ AddEventHandler('erp_mdt:newReport',
 
 -- DMV
 
-local function GetImpoundStatus(vehicleid, cb)
+--[[local function GetImpoundStatus(vehicleid, cb)
     cb(#(exports.oxmysql:executeSync('SELECT id FROM `impound` WHERE `vehicleid` = @vehicleid', {['@vehicleid'] = vehicleid})) > 0)
-end
+end]]
 
 local function GetBoloStatus(plate, cb)
     cb(exports.oxmysql:executeSync('SELECT id FROM `pd_bolos` WHERE LOWER (`plate`) = @plate', {
@@ -1751,7 +1665,7 @@ AddEventHandler('erp_mdt:searchVehicles', function(search, hash)
         if xPlayer then
             if xPlayer.job and (xPlayer.job.name == 'police' or xPlayer.job.name == 'doj') then
                 exports.oxmysql:execute(
-                    "SELECT owner, plate, vehicle, code, stolen, image FROM `owned_vehicles` WHERE LOWER(`plate`) LIKE @query OR LOWER(`vehicle`) LIKE @hash LIMIT 25",
+                    "SELECT owner, plate, vehicle, image FROM `owned_vehicles` WHERE LOWER(`plate`) LIKE @query OR LOWER(`vehicle`) LIKE @hash LIMIT 25",
                     {
                         ["@query"] = string.lower('%' .. search .. '%'),
                         ["@hash"] = string.lower('%' .. hash .. '%')
@@ -1762,14 +1676,9 @@ AddEventHandler('erp_mdt:searchVehicles', function(search, hash)
                             -- GetImpoundStatus(vehicles[i]['plate'], function(impoundStatus)
                                 -- vehicles[i]['impound'] = impoundStatus
                             -- end)
-                            vehicles[i]['impound'] = false
+                            --vehicles[i]['impound'] = false
                             vehicles[i]['bolo'] = false
 
-                            if tonumber(vehicles[i]['code']) == 5 then
-                                vehicles[i]['code'] = true
-                            else
-                                vehicles[i]['code'] = false
-                            end
 
                             -- Bolo Status
                             GetBoloStatus(vehicles[i]['plate'], function(boloStatus)
@@ -1784,9 +1693,9 @@ AddEventHandler('erp_mdt:searchVehicles', function(search, hash)
                                 end
                             end)
 
-                            -- if vehicles[i]['image'] == nil then
-                                -- vehicles[i]['image'] = "img/not-found.jpg"
-                            -- end
+                             if vehicles[i]['image'] == nil then
+                                 vehicles[i]['image'] = "img/not-found.jpg"
+                             end
 
                         end
 
@@ -1804,14 +1713,14 @@ AddEventHandler('erp_mdt:getVehicleData', function(plate)
         if xPlayer then
             if xPlayer.job and (xPlayer.job.name == 'police' or xPlayer.job.name == 'doj') then
                 exports.oxmysql:execute(
-                    "SELECT owner, plate, vehicle, code, stolen, image FROM `owned_vehicles` WHERE plate = @plate LIMIT 1",
+                    "SELECT owner, plate, vehicle, image FROM `owned_vehicles` WHERE plate = @plate LIMIT 1",
                     {
                         ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1")
                     }, function(vehicle)
                         if vehicle and vehicle[1] then
 						    local vehData = json.decode(vehicle[1].vehicle)
 							--print(vehData.model)
-                            vehicle[1]['impound'] = false
+                            --vehicle[1]['impound'] = false
                             -- GetImpoundStatus(vehicle[1]['plate'], function(impoundStatus)
                                 -- vehicle[1]['impound'] = impoundStatus
                             -- end)
@@ -1819,12 +1728,7 @@ AddEventHandler('erp_mdt:getVehicleData', function(plate)
                             vehicle[1]['bolo'] = false
                             vehicle[1]['information'] = ""
 
-                            if tonumber(vehicle[1]['code']) == 5 then
-                                vehicle[1]['code'] = true
-                            else
-                                vehicle[1]['code'] = false
-                            end -- Used to get the code 5 status
-
+                            
                             -- Bolo Status
                             GetBoloStatus(vehicle[1]['plate'], function(boloStatus)
                                 if boloStatus and boloStatus[1] then
@@ -1899,97 +1803,16 @@ AddEventHandler('erp_mdt:saveVehicleInfo', function(dbid, plate, imageurl, notes
     end
 end)
 
-RegisterNetEvent('erp_mdt:knownInformation')
-AddEventHandler('erp_mdt:knownInformation', function(dbid, type, status, plate)
-    if plate then
-        local xPlayer = ESX.GetPlayerFromId(source)
-        if xPlayer then
-            if xPlayer.job and (xPlayer.job.name == 'police' or xPlayer.job.name == 'doj') then
-                if dbid == nil then
-                    dbid = 0
-                end
-
-                if type == 'code5' and status == true then
-                    exports.oxmysql:executeSync("UPDATE owned_vehicles SET `code `= @code WHERE `plate` = @plate LIMIT 1", {
-                        ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1"),
-                        ["@code"] = 5
-                    })
-                    TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate (" .. plate .. ") was set to CODE 5 by " ..
-                        xPlayer.name)
-                elseif type == 'code5' and not status then
-                    exports.oxmysql:executeSync("UPDATE owned_vehicles SET `code` = @code WHERE `plate` = @plate LIMIT 1", {
-                       ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1"),
-                       ["@code"] = 0
-                    })
-                    TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate (" .. plate ..
-                        ") had it's CODE 5 status removed by " .. xPlayer.name)
-                elseif type == 'stolen' and status then
-                    exports.oxmysql:executeSync(
-                        "UPDATE owned_vehicles SET `stolen`= @stolen WHERE `plate` = @plate LIMIT 1", {
-                            ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1"),
-                            ["@stolen"] = 1
-                        })
-                    TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate (" .. plate .. ") was set to STOLEN by " ..
-                        xPlayer.name)
-                elseif type == 'stolen' and not status then
-                    exports.oxmysql:executeSync(
-                        "UPDATE owned_vehicles SET `stolen` = @stolen WHERE `plate` = @plate LIMIT 1", {
-                            ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1"),
-                            ["@stolen"] = 0
-                        })
-                    TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate (" .. plate ..
-                        ") had it's STOLEN status removed by " .. xPlayer.name)
-                end
-
-                if tonumber(dbid) == 0 then
-                    exports.oxmysql:insert('INSERT INTO `pd_vehicleinfo` (`plate`) VALUES (@plate)', {
-                        ["@plate"] = string.gsub(plate, "^%s*(.-)%s*$", "%1")
-                    }, function(infoResult)
-                        if infoResult then
-                            TriggerClientEvent('erp_mdt:updateVehicleDbId', xPlayer.source, infoResult)
-                            TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate (" .. plate ..
-                                ") was added to the vehicle information database by " .. xPlayer.name)
-                        end
-                    end)
-                end
-            end
-        end
-    end
-end)
-
 local LogPerms = {
     ['ambulance'] = {
-	    [3] = true,
-        [7] = true,
-        [8] = true,
-        [15] = true,
-        [16] = true
-    },
-    ['bcso'] = {
-        [6] = true,
-        [7] = true,
-        [8] = true
-    },
-    ['doc'] = {
-        [8] = true,
-        [9] = true
-    },
-    ['doj'] = {
-        [11] = true
+	    [4] = true,
+        [5] = true,
     },
     ['police'] = {
-        [6] = true,
-        [7] = true,
-        [8] = true
-    },
-    ['sast'] = {
         [5] = true,
-        [6] = true
+        [6] = true,
+        [7] = true
     },
-    ['sapr'] = {
-        [4] = true,
-        [5] = true
-    }
 }
 
 RegisterNetEvent('erp_mdt:getAllLogs')
@@ -2004,1489 +1827,611 @@ AddEventHandler('erp_mdt:getAllLogs', function()
     end
 end)
 
--- Penal Code
-
+--Penal Code
 local PenalCodeTitles = {
-    [1] = 'OFFENSES AGAINST PERSONS',
-    [2] = 'OFFENSES INVOLVING THEFT',
-    [3] = 'OFFENSES INVOLVING FRAUD',
-    [4] = 'OFFENSES INVOLVING DAMAGE TO PROPERTY',
-    [5] = 'OFFENSES AGAINST PUBLIC ADMINISTRATION',
-    [6] = 'OFFENSES AGAINST PUBLIC ORDER',
-    [7] = 'OFFENSES AGAINST HEALTH AND MORALS',
-    [8] = 'OFFENSES AGAINST PUBLIC SAFETY',
-    [9] = 'OFFENSES INVOLVING THE OPERATION OF A VEHICLE',
-    [10] = 'OFFENSES INVOLVING THE WELL-BEING OF WILDLIFE'
+    [1] = 'Citations',
+    [2] = 'Misdemeanors',
+    [3] = 'Felonies',
 }
 
 local PenalCode = {
     [1] = {
         [1] = {
-            title = 'Simple Assault',
-            class = 'Misdemeanor',
-            id = 'P.C. 1001',
-            months = 7,
-            fine = 500,
+            title = 'Driving an illegal Vehicle',
+            class = 'Citations',
+            id = 'C.T. 1001',
+            months = 0,
+            fine = 100,
             color = 'green'
         },
         [2] = {
-            title = 'Assault',
-            class = 'Misdemeanor',
-            id = 'P.C. 1002',
-            months = 15,
-            fine = 850,
-            color = 'orange'
-        },
-        [3] = {
-            title = 'Aggravated Assault',
-            class = 'Felony',
-            id = 'P.C. 1003',
-            months = 20,
-            fine = 1250,
-            color = 'orange'
-        },
-        [4] = {
-            title = 'Assault with a Deadly Weapon',
-            class = 'Felony',
-            id = 'P.C. 1004',
-            months = 30,
-            fine = 3750,
-            color = 'red'
-        },
-        [5] = {
-            title = 'Involuntary Manslaughter',
-            class = 'Felony',
-            id = 'P.C. 1005',
-            months = 60,
-            fine = 7500,
-            color = 'red'
-        },
-        [6] = {
-            title = 'Vehicular Manslaughter',
-            class = 'Felony',
-            id = 'P.C. 1006',
-            months = 75,
-            fine = 7500,
-            color = 'red'
-        },
-        [7] = {
-            title = 'Attempted Murder of a Civilian',
-            class = 'Felony',
-            id = 'P.C. 1007',
-            months = 50,
-            fine = 7500,
-            color = 'red'
-        },
-        [8] = {
-            title = 'Second Degree Murder',
-            class = 'Felony',
-            id = 'P.C. 1008',
-            months = 100,
-            fine = 15000,
-            color = 'red'
-        },
-        [9] = {
-            title = 'Accessory to Second Degree Murder',
-            class = 'Felony',
-            id = 'P.C. 1009',
-            months = 50,
-            fine = 5000,
-            color = 'red'
-        },
-        [10] = {
-            title = 'First Degree Murder',
-            class = 'Felony',
-            id = 'P.C. 1010',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [11] = {
-            title = 'Accessory to First Degree Murder',
-            class = 'Felony',
-            id = 'P.C. 1011',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [12] = {
-            title = 'Murder of a Public Servant or Peace Officer',
-            class = 'Felony',
-            id = 'P.C. 1012',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [13] = {
-            title = 'Attempted Murder of a Public Servant or Peace Officer',
-            class = 'Felony',
-            id = 'P.C. 1013',
-            months = 65,
-            fine = 10000,
-            color = 'red'
-        },
-        [14] = {
-            title = 'Accessory to the Murder of a Public Servant or Peace Officer',
-            class = 'Felony',
-            id = 'P.C. 1014',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [15] = {
-            title = 'Unlawful Imprisonment',
-            class = 'Misdemeanor',
-            id = 'P.C. 1015',
-            months = 10,
-            fine = 600,
-            color = 'green'
-        },
-        [16] = {
-            title = 'Kidnapping',
-            class = 'Felony',
-            id = 'P.C. 1016',
-            months = 15,
-            fine = 900,
-            color = 'orange'
-        },
-        [17] = {
-            title = 'Accessory to Kidnapping',
-            class = 'Felony',
-            id = 'P.C. 1017',
-            months = 7,
-            fine = 450,
-            color = 'orange'
-        },
-        [18] = {
-            title = 'Attempted Kidnapping',
-            class = 'Felony',
-            id = 'P.C. 1018',
-            months = 10,
-            fine = 450,
-            color = 'orange'
-        },
-        [19] = {
-            title = 'Hostage Taking',
-            class = 'Felony',
-            id = 'P.C. 1019',
-            months = 20,
-            fine = 1200,
-            color = 'orange'
-        },
-        [20] = {
-            title = 'Accessory to Hostage Taking',
-            class = 'Felony',
-            id = 'P.C. 1020',
-            months = 10,
-            fine = 600,
-            color = 'orange'
-        },
-        [21] = {
-            title = 'Unlawful Imprisonment of a Public Servant or Peace Officer.',
-            class = 'Felony',
-            id = 'P.C. 1021',
-            months = 25,
-            fine = 4000,
-            color = 'orange'
-        },
-        [22] = {
-            title = 'Criminal Threats',
-            class = 'Misdemeanor',
-            id = 'P.C. 1022',
-            months = 5,
-            fine = 500,
-            color = 'orange'
-        },
-        [23] = {
-            title = 'Reckless Endangerment',
-            class = 'Misdemeanor',
-            id = 'P.C. 1023',
-            months = 10,
-            fine = 1000,
-            color = 'orange'
-        },
-        [24] = {
-            title = 'Gang Related Shooting',
-            class = 'Felony',
-            id = 'P.C. 1024',
-            months = 30,
-            fine = 2500,
-            color = 'red'
-        },
-        [25] = {
-            title = 'Cannibalism',
-            class = 'Felony',
-            id = 'P.C. 1025',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [26] = {
-            title = 'Torture',
-            class = 'Felony',
-            id = 'P.C. 1026',
-            months = 40,
-            fine = 4500,
-            color = 'red'
-        }
-    },
-    [2] = {
-        [1] = {
-            title = 'Petty Theft',
-            class = 'Infraction',
-            id = 'P.C. 2001',
+            title = 'Driving On The Wrong Side Of The Road',
+            class = 'Citations',
+            id = 'C.T. 1002',
             months = 0,
             fine = 250,
             color = 'green'
         },
-        [2] = {
-            title = 'Grand Theft',
-            class = 'Misdemeanor',
-            id = 'P.C. 2002',
-            months = 10,
-            fine = 600,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Grand Theft Auto A',
-            class = 'Felony',
-            id = 'P.C. 2003',
-            months = 15,
-            fine = 900,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Grand Theft Auto B',
-            class = 'Felony',
-            id = 'P.C. 2004',
-            months = 35,
-            fine = 3500,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Carjacking',
-            class = 'Felony',
-            id = 'P.C. 2005',
-            months = 30,
-            fine = 2000,
-            color = 'orange'
-        },
-        [6] = {
-            title = 'Burglary',
-            class = 'Misdemeanor',
-            id = 'P.C. 2006',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [7] = {
-            title = 'Robbery',
-            class = 'Felony',
-            id = 'P.C. 2007',
-            months = 25,
-            fine = 2000,
-            color = 'green'
-        },
-        [8] = {
-            title = 'Accessory to Robbery',
-            class = 'Felony',
-            id = 'P.C. 2008',
-            months = 12,
-            fine = 1000,
-            color = 'green'
-        },
-        [9] = {
-            title = 'Attempted Robbery',
-            class = 'Felony',
-            id = 'P.C. 2009',
-            months = 20,
-            fine = 1000,
-            color = 'green'
-        },
-        [10] = {
-            title = 'Armed Robbery',
-            class = 'Felony',
-            id = 'P.C. 2010',
-            months = 30,
-            fine = 3000,
-            color = 'orange'
-        },
-        [11] = {
-            title = 'Accessory to Armed Robbery',
-            class = 'Felony',
-            id = 'P.C. 2011',
-            months = 15,
-            fine = 1500,
-            color = 'orange'
-        },
-        [12] = {
-            title = 'Attempted Armed Robbery',
-            class = 'Felony',
-            id = 'P.C. 2012',
-            months = 25,
-            fine = 1500,
-            color = 'orange'
-        },
-        [13] = {
-            title = 'Grand Larceny',
-            class = 'Felony',
-            id = 'P.C. 2013',
-            months = 45,
-            fine = 7500,
-            color = 'orange'
-        },
-        [14] = {
-            title = 'Leaving Without Paying',
-            class = 'Infraction',
-            id = 'P.C. 2014',
+		[3] = {
+            title = 'Driving Without Headlights or Signals',
+            class = 'Citations',
+            id = 'C.T. 1003',
             months = 0,
-            fine = 500,
+            fine = 175,
             color = 'green'
         },
-        [15] = {
-            title = 'Possession of Nonlegal Currency',
-            class = 'Misdemeanor',
-            id = 'P.C. 2015',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        },
-        [16] = {
-            title = 'Possession of Government-Issued Items',
-            class = 'Misdemeanor',
-            id = 'P.C. 2016',
-            months = 15,
-            fine = 1000,
-            color = 'green'
-        },
-        [17] = {
-            title = 'Possession of Items Used in the Commission of a Crime',
-            class = 'Misdemeanor',
-            id = 'P.C. 2017',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [18] = {
-            title = 'Sale of Items Used in the Commission of a Crime',
-            class = 'Felony',
-            id = 'P.C. 2018',
-            months = 15,
-            fine = 1000,
-            color = 'orange'
-        },
-        [19] = {
-            title = 'Theft of an Aircraft',
-            class = 'Felony',
-            id = 'P.C. 2019',
-            months = 20,
-            fine = 1000,
-            color = 'green'
-        }
-    },
-    [3] = {
-        [1] = {
-            title = 'Impersonating',
-            class = 'Misdemeanor',
-            id = 'P.C. 3001',
-            months = 15,
-            fine = 1250,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Impersonating a Peace Officer or Public Servant',
-            class = 'Felony',
-            id = 'P.C. 3002',
-            months = 25,
-            fine = 2750,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Impersonating a Judge',
-            class = 'Felony',
-            id = 'P.C. 3003',
-            months = 0,
-            fine = 0,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Possession of Stolen Identification',
-            class = 'Misdemeanor',
-            id = 'P.C. 3004',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Possession of Stolen Government Identification',
-            class = 'Misdemeanor',
-            id = 'P.C. 3005',
-            months = 20,
-            fine = 2000,
-            color = 'green'
-        },
-        [6] = {
-            title = 'Extortion',
-            class = 'Felony',
-            id = 'P.C. 3006',
-            months = 20,
-            fine = 900,
-            color = 'orange'
-        },
-        [7] = {
-            title = 'Fraud',
-            class = 'Misdemeanor',
-            id = 'P.C. 3007',
-            months = 10,
-            fine = 450,
-            color = 'green'
-        },
-        [8] = {
-            title = 'Forgery',
-            class = 'Misdemeanor',
-            id = 'P.C. 3008',
-            months = 15,
-            fine = 750,
-            color = 'green'
-        },
-        [9] = {
-            title = 'Money Laundering',
-            class = 'Felony',
-            id = 'P.C. 3009',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        }
-    },
-    [4] = {
-        [1] = {
-            title = 'Trespassing',
-            class = 'Misdemeanor',
-            id = 'P.C. 4001',
-            months = 10,
-            fine = 450,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Felony Trespassing',
-            class = 'Felony',
-            id = 'P.C. 4002',
-            months = 15,
-            fine = 1500,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Arson',
-            class = 'Felony',
-            id = 'P.C. 4003',
-            months = 15,
-            fine = 1500,
-            color = 'orange'
-        },
-        [4] = {
-            title = 'Vandalism',
-            class = 'Infraction',
-            id = 'P.C. 4004',
-            months = 0,
-            fine = 300,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Vandalism of Government Property',
-            class = 'Felony',
-            id = 'P.C. 4005',
-            months = 20,
-            fine = 1500,
-            color = 'green'
-        },
-        [6] = {
-            title = 'Littering',
-            class = 'Infraction',
-            id = 'P.C. 4006',
+		[4] = {
+            title = 'Excessive Vehicle Noise',
+            class = 'Citations',
+            id = 'C.T. 1004',
             months = 0,
             fine = 200,
             color = 'green'
-        }
-    },
-    [5] = {
-        [1] = {
-            title = 'Bribery of a Government Official',
-            class = 'Felony',
-            id = 'P.C. 5001',
-            months = 20,
-            fine = 3500,
-            color = 'green'
         },
-        [2] = {
-            title = 'Anti-Mask Law',
-            class = 'Infraction',
-            id = 'P.C. 5002',
-            months = 0,
-            fine = 750,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Possession of Contraband in a Government Facility',
-            class = 'Felony',
-            id = 'P.C. 5003',
-            months = 25,
-            fine = 1000,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Criminal Possession of Stolen Property',
-            class = 'Misdemeanor',
-            id = 'P.C. 5004',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Escaping',
-            class = 'Felony',
-            id = 'P.C. 5005',
-            months = 10,
-            fine = 450,
-            color = 'green'
-        },
-        [6] = {
-            title = 'Jailbreak',
-            class = 'Felony',
-            id = 'P.C. 5006',
-            months = 30,
-            fine = 2500,
-            color = 'orange'
-        },
-        [7] = {
-            title = 'Accessory to Jailbreak',
-            class = 'Felony',
-            id = 'P.C. 5007',
-            months = 25,
-            fine = 2000,
-            color = 'orange'
-        },
-        [8] = {
-            title = 'Attempted Jailbreak',
-            class = 'Felony',
-            id = 'P.C. 5008',
-            months = 20,
-            fine = 1500,
-            color = 'orange'
-        },
-        [9] = {
-            title = 'Perjury',
-            class = 'Felony',
-            id = 'P.C. 5009',
-            months = 0,
-            fine = 0,
-            color = 'green'
-        },
-        [10] = {
-            title = 'Violation of a Restraining Order',
-            class = 'Felony',
-            id = 'P.C. 5010',
-            months = 20,
-            fine = 2250,
-            color = 'green'
-        },
-        [11] = {
-            title = 'Embezzlement',
-            class = 'Felony',
-            id = 'P.C. 5011',
-            months = 45,
-            fine = 10000,
-            color = 'green'
-        },
-        [12] = {
-            title = 'Unlawful Practice',
-            class = 'Felony',
-            id = 'P.C. 5012',
-            months = 15,
-            fine = 1500,
-            color = 'orange'
-        },
-        [13] = {
-            title = 'Misuse of Emergency Systems',
-            class = 'Infraction',
-            id = 'P.C. 5013',
-            months = 0,
-            fine = 600,
-            color = 'orange'
-        },
-        [14] = {
-            title = 'Conspiracy',
-            class = 'Misdemeanor',
-            id = 'P.C. 5014',
-            months = 10,
-            fine = 450,
-            color = 'green'
-        },
-        [15] = {
-            title = 'Violating a Court Order',
-            class = 'Misdemeanor',
-            id = 'P.C. 5015',
-            months = 0,
-            fine = 0,
-            color = 'orange'
-        },
-        [16] = {
-            title = 'Failure to Appear',
-            class = 'Misdemeanor',
-            id = 'P.C. 5016',
-            months = 0,
-            fine = 0,
-            color = 'orange'
-        },
-        [17] = {
-            title = 'Contempt of Court',
-            class = 'Felony',
-            id = 'P.C. 5017',
-            months = 0,
-            fine = 0,
-            color = 'orange'
-        },
-        [18] = {
-            title = 'Resisting Arrest',
-            class = 'Misdemeanor',
-            id = 'P.C. 5018',
-            months = 5,
-            fine = 300,
-            color = 'orange'
-        }
-    },
-    [6] = {
-        [1] = {
-            title = 'Disobeying a Peace Officer',
-            class = 'infraction',
-            id = 'P.C. 6001',
-            months = 0,
-            fine = 750,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Disorderly Conduct',
-            class = 'Infraction',
-            id = 'P.C. 6002',
+		[5] = {
+            title = 'Failing To Stop At A Stop Sign/Red Light',
+            class = 'Citations',
+            id = 'C.T. 1005',
             months = 0,
             fine = 250,
             color = 'green'
         },
-        [3] = {
-            title = 'Disturbing the Peace',
-            class = 'infraction',
-            id = 'P.C. 6003',
-            months = 0,
-            fine = 350,
-            color = 'green'
-        },
-        [4] = {
-            title = 'False Reporting',
-            class = 'Misdemeanor',
-            id = 'P.C. 6004',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Harassment',
-            class = 'Misdemeanor',
-            id = 'P.C. 6005',
-            months = 10,
-            fine = 500,
-            color = 'orange'
-        },
-        [6] = {
-            title = 'Misdemeanor Obstruction of Justice',
-            class = 'Misdemeanor',
-            id = 'P.C. 6006',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [7] = {
-            title = 'Felony Obstruction of Justice',
-            class = 'Felony',
-            id = 'P.C. 6007',
-            months = 15,
-            fine = 900,
-            color = 'green'
-        },
-        [8] = {
-            title = 'Inciting a Riot',
-            class = 'Felony',
-            id = 'P.C. 6008',
-            months = 25,
-            fine = 1000,
-            color = 'orange'
-        },
-        [9] = {
-            title = 'Loitering on Government Properties',
-            class = 'Infraction',
-            id = 'P.C. 6009',
-            months = 0,
-            fine = 500,
-            color = 'green'
-        },
-        [10] = {
-            title = 'Tampering',
-            class = 'Misdemeanor',
-            id = 'P.C. 6010',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [11] = {
-            title = 'Vehicle Tampering',
-            class = 'Misdemeanor',
-            id = 'P.C. 6011',
-            months = 15,
-            fine = 750,
-            color = 'green'
-        },
-        [12] = {
-            title = 'Evidence Tampering',
-            class = 'Felony',
-            id = 'P.C. 6012',
-            months = 20,
-            fine = 1000,
-            color = 'green'
-        },
-        [13] = {
-            title = 'Witness Tampering',
-            class = 'Felony',
-            id = 'P.C. 6013',
-            months = 0,
-            fine = 0,
-            color = 'green'
-        },
-        [14] = {
-            title = 'Failure to Provide Identification',
-            class = 'Misdemeanor',
-            id = 'P.C. 6014',
-            months = 15,
-            fine = 1500,
-            color = 'green'
-        },
-        [15] = {
-            title = 'Vigilantism',
-            class = 'Felony',
-            id = 'P.C. 6015',
-            months = 30,
-            fine = 1500,
-            color = 'orange'
-        },
-        [16] = {
-            title = 'Unlawful Assembly',
-            class = 'Misdemeanor',
-            id = 'P.C. 6016',
-            months = 10,
-            fine = 750,
-            color = 'orange'
-        },
-        [17] = {
-            title = 'Government Corruption',
-            class = 'Felony',
-            id = 'P.C. 6017',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [18] = {
-            title = 'Stalking',
-            class = 'Felony',
-            id = 'P.C. 6018',
-            months = 40,
-            fine = 1500,
-            color = 'orange'
-        },
-        [19] = {
-            title = 'Aiding and Abetting',
-            class = 'Misdemeanor',
-            id = 'P.C. 6019',
-            months = 15,
-            fine = 450,
-            color = 'orange'
-        },
-        [20] = {
-            title = 'Harboring a Fugitive',
-            class = 'Misdemeanor',
-            id = 'P.C. 6020',
-            months = 10,
-            fine = 1000,
-            color = 'green'
-        }
-    },
-    [7] = {
-        [1] = {
-            title = 'Misdemeanor Possession of Marijuana',
-            class = 'Mask',
-            id = 'P.C. 7001',
-            months = 5,
-            fine = 250,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Felony Possession of Marijuana',
-            class = 'Felony',
-            id = 'P.C. 7002',
-            months = 15,
-            fine = 1000,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Cultivation of Marijuana A',
-            class = 'Misdemeanor',
-            id = 'P.C. 7003',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Cultivation of Marijuana B',
-            class = 'Felony',
-            id = 'P.C. 7004',
-            months = 30,
-            fine = 1500,
-            color = 'orange'
-        },
-        [5] = {
-            title = 'Possession of Marijuana with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7005',
-            months = 30,
-            fine = 3000,
-            color = 'orange'
-        },
-        [6] = {
-            title = 'Misdemeanor Possession of Cocaine',
-            class = 'Misdemeanor',
-            id = 'P.C. 7006',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [7] = {
-            title = 'Felony Possession of Cocaine',
-            class = 'Felony',
-            id = 'P.C. 7007',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [8] = {
-            title = 'Possession of Cocaine with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7008',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [9] = {
-            title = 'Misdemeanor Possession of Methamphetamine',
-            class = 'Misdemeanor',
-            id = 'P.C. 7009',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [10] = {
-            title = 'Felony Possession of Methamphetamine',
-            class = 'Felony',
-            id = 'P.C. 7010',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [11] = {
-            title = 'Possession of Methamphetamine with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7011',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [12] = {
-            title = 'Misdemeanor Possession of Oxy / Vicodin',
-            class = 'Felony',
-            id = 'P.C. 7012',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [13] = {
-            title = 'Felony Possession of Oxy / Vicodin',
-            class = 'Felony',
-            id = 'P.C. 7013',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [14] = {
-            title = 'Felony Possession of Oxy / Vicodin with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7014',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [15] = {
-            title = 'Misdemeanor Possession of Ecstasy',
-            class = 'Misdemeanor',
-            id = 'P.C. 7015',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [16] = {
-            title = 'Felony Possession of Ecstasy',
-            class = 'Felony',
-            id = 'P.C. 7016',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [17] = {
-            title = 'Possession of Ecstasy with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7017',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [18] = {
-            title = 'Misdemeanor Possession of Opium',
-            class = 'Misdemeanor',
-            id = 'P.C. 7018',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [19] = {
-            title = 'Felony Possession of Opium',
-            class = 'Felony',
-            id = 'P.C. 7019',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [20] = {
-            title = 'Possession of Opium with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7020',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [21] = {
-            title = 'Misdemeanor Possession of Adderall',
-            class = 'Misdemeanor',
-            id = 'P.C. 7021',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [22] = {
-            title = 'Felony Possession of Adderall',
-            class = 'Felony',
-            id = 'P.C. 7022',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [23] = {
-            title = 'Possession of Adderall with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7023',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [24] = {
-            title = 'Misdemeanor Possession of Xanax',
-            class = 'Misdemeanor',
-            id = 'P.C. 7024',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [25] = {
-            title = 'Felony Possession of Xanax',
-            class = 'Felony',
-            id = 'P.C. 7025',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [26] = {
-            title = 'Possession of Xanax with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7026',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [27] = {
-            title = 'Misdemeanor Possession of Shrooms',
-            class = 'Misdemeanor',
-            id = 'P.C. 7027',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [28] = {
-            title = 'Felony Possession of Shrooms',
-            class = 'Felony',
-            id = 'P.C. 7028',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [29] = {
-            title = 'Possession of Shrooms with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7029',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [30] = {
-            title = 'Misdemeanor Possession of Lean',
-            class = 'Misdemeanor',
-            id = 'P.C. 7030',
-            months = 7,
-            fine = 500,
-            color = 'green'
-        },
-        [31] = {
-            title = 'Felony Possession of Lean',
-            class = 'Felony',
-            id = 'P.C. 7031',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [32] = {
-            title = 'Possession of Lean with Intent to Distribute',
-            class = 'Felony',
-            id = 'P.C. 7032',
-            months = 35,
-            fine = 4500,
-            color = 'orange'
-        },
-        [33] = {
-            title = 'Sale of a controlled substance',
-            class = 'Misdemeanor',
-            id = 'P.C. 7033',
-            months = 10,
-            fine = 1000,
-            color = 'green'
-        },
-        [34] = {
-            title = 'Drug Trafficking',
-            class = 'Felony',
-            id = 'P.C. 7034',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [35] = {
-            title = 'Desecration of a Human Corpse',
-            class = 'Felony',
-            id = 'P.C. 7035',
-            months = 20,
-            fine = 1500,
-            color = 'orange'
-        },
-        [36] = {
-            title = 'Public Intoxication',
-            class = 'Infraction',
-            id = 'P.C. 7036',
-            months = 0,
-            fine = 500,
-            color = 'green'
-        },
-        [37] = {
-            title = 'Public Indecency',
-            class = 'Misdemeanor',
-            id = 'P.C. 7037',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        }
-    },
-    [8] = {
-        [1] = {
-            title = 'Criminal Possession of Weapon Class A',
-            class = 'Felony',
-            id = 'P.C. 8001',
-            months = 10,
-            fine = 500,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Criminal Possession of Weapon Class B',
-            class = 'Felony',
-            id = 'P.C. 8002',
-            months = 15,
-            fine = 1000,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Criminal Possession of Weapon Class C',
-            class = 'Felony',
-            id = 'P.C. 8003',
-            months = 30,
-            fine = 3500,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Criminal Possession of Weapon Class D',
-            class = 'Felony',
-            id = 'P.C. 8004',
-            months = 25,
-            fine = 1500,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Criminal Sale of Weapon Class A',
-            class = 'Felony',
-            id = 'P.C. 8005',
-            months = 15,
-            fine = 1000,
-            color = 'orange'
-        },
-        [6] = {
-            title = 'Criminal Sale of Weapon Class B',
-            class = 'Felony',
-            id = 'P.C. 8006',
-            months = 20,
-            fine = 2000,
-            color = 'orange'
-        },
-        [7] = {
-            title = 'Criminal Sale of Weapon Class C',
-            class = 'Felony',
-            id = 'P.C. 8007',
-            months = 35,
-            fine = 7000,
-            color = 'orange'
-        },
-        [8] = {
-            title = 'Criminal Sale of Weapon Class D',
-            class = 'Felony',
-            id = 'P.C. 8008',
-            months = 30,
-            fine = 3000,
-            color = 'orange'
-        },
-        [9] = {
-            title = 'Criminal Use of Weapon',
-            class = 'Misdemeanor',
-            id = 'P.C. 8009',
-            months = 10,
-            fine = 450,
-            color = 'orange'
-        },
-        [10] = {
-            title = 'Possession of Illegal Firearm Modifications',
-            class = 'Misdemeanor',
-            id = 'P.C. 8010',
-            months = 10,
-            fine = 300,
-            color = 'green'
-        },
-        [11] = {
-            title = 'Weapon Trafficking',
-            class = 'Felony',
-            id = 'P.C. 8011',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [12] = {
-            title = 'Brandishing a Weapon',
-            class = 'Misdemeanor',
-            id = 'P.C. 8012',
-            months = 15,
-            fine = 500,
-            color = 'orange'
-        },
-        [13] = {
-            title = 'Insurrection',
-            class = 'Felony',
-            id = 'P.C. 8013',
-            months = 0,
-            fine = 0,
-            color = 'red'
-        },
-        [14] = {
-            title = 'Flying into Restricted Airspace',
-            class = 'Felony',
-            id = 'P.C. 8014',
-            months = 20,
-            fine = 1500,
-            color = 'green'
-        },
-        [15] = {
-            title = 'Jaywalking',
-            class = 'Infraction',
-            id = 'P.C. 8015',
-            months = 0,
-            fine = 150,
-            color = 'green'
-        },
-        [16] = {
-            title = 'Criminal Use of Explosives',
-            class = 'Felony',
-            id = 'P.C. 8016',
-            months = 30,
-            fine = 2500,
-            color = 'orange'
-        }
-    },
-    [9] = {
-        [1] = {
-            title = 'Driving While Intoxicated',
-            class = 'Misdemeanor',
-            id = 'P.C. 9001',
-            months = 5,
-            fine = 300,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Evading',
-            class = 'Misdemeanor',
-            id = 'P.C. 9002',
-            months = 5,
-            fine = 400,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Reckless Evading',
-            class = 'Felony',
-            id = 'P.C. 9003',
-            months = 10,
-            fine = 800,
-            color = 'orange'
-        },
-        [4] = {
-            title = 'Failure to Yield to Emergency Vehicle',
-            class = 'Infraction',
-            id = 'P.C. 9004',
-            months = 0,
-            fine = 600,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Failure to Obey Traffic Control Device',
-            class = 'Infraction',
-            id = 'P.C. 9005',
-            months = 0,
-            fine = 150,
-            color = 'green'
-        },
-        [6] = {
-            title = 'Nonfunctional Vehicle',
-            class = 'Infraction',
-            id = 'P.C. 9006',
-            months = 0,
-            fine = 75,
-            color = 'green'
-        },
-        [7] = {
-            title = 'Negligent Driving',
-            class = 'Infraction',
-            id = 'P.C. 9007',
-            months = 0,
-            fine = 300,
-            color = 'green'
-        },
-        [8] = {
-            title = 'Reckless Driving',
-            class = 'Misdemeanor',
-            id = 'P.C. 9008',
-            months = 10,
-            fine = 750,
-            color = 'orange'
-        },
-        [9] = {
-            title = 'Third Degree Speeding',
-            class = 'Infraction',
-            id = 'P.C. 9009',
+		[6] = {
+            title = 'Failing to Yield To An Emergency Vehicle',
+            class = 'Citations',
+            id = 'C.T. 1006',
             months = 0,
             fine = 225,
             color = 'green'
         },
-        [10] = {
-            title = 'Second Degree Speeding',
-            class = 'Infraction',
-            id = 'P.C. 9010',
+		[7] = {
+            title = 'Failure to Comply With Vehicle Information',
+            class = 'Citations',
+            id = 'C.T. 1007',
             months = 0,
-            fine = 450,
+            fine = 275,
             color = 'green'
         },
-        [11] = {
-            title = 'First Degree Speeding',
-            class = 'Infraction',
-            id = 'P.C. 9011',
+		[8] = {
+            title = 'Failure To Maintain Lane',
+            class = 'Citations',
+            id = 'C.T. 1008',
             months = 0,
-            fine = 750,
+            fine = 300,
             color = 'green'
-        },
-        [12] = {
-            title = 'Unlicensed Operation of Vehicle',
-            class = 'Infraction',
-            id = 'P.C. 9012',
+		},
+		[9] = {
+            title = 'Failure To Provide ID',
+            class = 'Citations',
+            id = 'C.T. 1009',
             months = 0,
-            fine = 500,
+            fine = 300,
             color = 'green'
-        },
-        [13] = {
+		},
+		[10] = {
+            title = 'Failure To Yield',
+            class = 'Citations',
+            id = 'C.T. 1010',
+            months = 0,
+            fine = 350,
+            color = 'green'
+		},
+		[11] = {
+            title = 'Illegal Parking',
+            class = 'Citations',
+            id = 'C.T. 1011',
+            months = 0,
+            fine = 335,
+            color = 'green'
+		},
+		[12] = {
             title = 'Illegal U-Turn',
-            class = 'Infraction',
-            id = 'P.C. 9013',
+            class = 'Citations',
+            id = 'C.T. 1012',
             months = 0,
-            fine = 75,
+            fine = 250,
             color = 'green'
-        },
-        [14] = {
-            title = 'Illegal Passing',
-            class = 'Infraction',
-            id = 'P.C. 9014',
+		},
+		[13] = {
+            title = 'Illegally Driving Off-Road',
+            class = 'Citations',
+            id = 'C.T. 1013',
             months = 0,
-            fine = 300,
+            fine = 275,
             color = 'green'
-        },
-        [15] = {
-            title = 'Failure to Maintain Lane',
-            class = 'Infraction',
-            id = 'P.C. 9015',
+		},
+		[14] = {
+            title = 'Impeding Traffic',
+            class = 'Citations',
+            id = 'C.T. 1014',
             months = 0,
-            fine = 300,
+            fine = 225,
             color = 'green'
-        },
-        [16] = {
-            title = 'Illegal Turn',
-            class = 'Infraction',
-            id = 'P.C. 9016',
+		},
+		[15] = {
+            title = 'Refusing a Lawful Command',
+            class = 'Citations',
+            id = 'C.T. 1015',
             months = 0,
-            fine = 150,
+            fine = 225,
             color = 'green'
-        },
-        [17] = {
-            title = 'Failure to Stop',
-            class = 'Infraction',
-            id = 'P.C. 9017',
+		},
+		[16] = {
+            title = 'Speeding Class A',
+            class = 'Citations',
+            id = 'C.T. 1016',
             months = 0,
-            fine = 600,
+            fine = 225,
             color = 'green'
-        },
-        [18] = {
-            title = 'Unauthorized Parking',
-            class = 'Infraction',
-            id = 'P.C. 9018',
+		},
+		[17] = {
+            title = 'Speeding Class B',
+            class = 'Citations',
+            id = 'C.T. 1017',
             months = 0,
-            fine = 300,
+            fine = 325,
             color = 'green'
-        },
-        [19] = {
-            title = 'Hit and Run',
-            class = 'Misdemeanor',
-            id = 'P.C. 9019',
+		},
+		[18] = {
+            title = 'Speeding Class C',
+            class = 'Citations',
+            id = 'C.T. 1018',
+            months = 0,
+            fine = 425,
+            color = 'green'
+		},
+    },
+    [2] = {
+        [1] = {
+            title = 'Animal Cruelty',
+            class = 'Misdemeanors',
+            id = 'M.S. 2001',
             months = 10,
             fine = 500,
-            color = 'green'
-        },
-        [20] = {
-            title = 'Driving without Headlights or Signals',
-            class = 'Infraction',
-            id = 'P.C. 9020',
-            months = 0,
-            fine = 300,
-            color = 'green'
-        },
-        [21] = {
-            title = 'Street Racing',
-            class = 'Felony',
-            id = 'P.C. 9021',
-            months = 15,
-            fine = 1500,
-            color = 'green'
-        },
-        [22] = {
-            title = 'Piloting without Proper Licensing',
-            class = 'Felony',
-            id = 'P.C. 9022',
-            months = 20,
-            fine = 1500,
             color = 'orange'
         },
-        [23] = {
-            title = 'Unlawful Use of a Motorvehicle',
-            class = 'Misdemeanor',
-            id = 'P.C. 9023',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        }
-    },
-    [10] = {
-        [1] = {
-            title = 'Hunting in Restricted Areas',
-            class = 'Infraction',
-            id = 'P.C. 10001',
-            months = 0,
-            fine = 450,
-            color = 'green'
-        },
-        [2] = {
-            title = 'Unlicensed Hunting',
-            class = 'Infraction',
-            id = 'P.C. 10002',
-            months = 0,
-            fine = 450,
-            color = 'green'
-        },
-        [3] = {
-            title = 'Animal Cruelty',
-            class = 'Misdemeanor',
-            id = 'P.C. 10003',
-            months = 10,
-            fine = 450,
-            color = 'green'
-        },
-        [4] = {
-            title = 'Hunting with a Non-Hunting Weapon',
-            class = 'Misdemeanor',
-            id = 'P.C. 10004',
-            months = 10,
-            fine = 750,
-            color = 'green'
-        },
-        [5] = {
-            title = 'Hunting outside of hunting hours',
-            class = 'Infraction',
-            id = 'P.C. 10005',
-            months = 0,
-            fine = 750,
-            color = 'green'
-        },
-        [6] = {
-            title = 'Overhunting',
-            class = 'Misdemeanor',
-            id = 'P.C. 10006',
-            months = 10,
-            fine = 1000,
-            color = 'green'
-        },
-        [7] = {
-            title = 'Poaching',
-            class = 'Felony',
-            id = 'P.C. 10007',
+		[2] = {
+            title = 'Burglary',
+            class = 'Misdemeanors',
+            id = 'M.S. 2002',
             months = 20,
-            fine = 1250,
+            fine = 400,
+            color = 'orange'
+        },
+		[3] = {
+            title = 'Destruction of Property',
+            class = 'Misdemeanors',
+            id = 'M.S. 2003',
+            months = 10,
+            fine = 400,
+            color = 'orange'
+        },
+		[4] = {
+            title = 'Disorderly Conduct',
+            class = 'Misdemeanors',
+            id = 'M.S. 2004',
+            months = 25,
+            fine = 300,
+            color = 'orange'
+        },
+		[5] = {
+            title = 'Disrespect of an LEO/EMS',
+            class = 'Misdemeanors',
+            id = 'M.S. 2005',
+            months = 5,
+            fine = 250,
+            color = 'orange'
+        },
+		[6] = {
+            title = 'Disturbing the Peace',
+            class = 'Misdemeanors',
+            id = 'M.S. 2006',
+            months = 5,
+            fine = 250,
+            color = 'orange'
+        },
+		[7] = {
+            title = 'Driving Without a License',
+            class = 'Misdemeanors',
+            id = 'M.S. 2007',
+            months = 10,
+            fine = 300,
+            color = 'orange'
+        },
+		[8] = {
+            title = 'Failure to comply',
+            class = 'Misdemeanors',
+            id = 'M.S. 2008',
+            months = 25,
+            fine = 325,
+            color = 'orange'
+        },
+		[9] = {
+            title = 'False Report',
+            class = 'Misdemeanors',
+            id = 'M.S. 2009',
+            months = 15,
+            fine = 175,
+            color = 'orange'
+        },
+		[10] = {
+            title = 'Government Trespassing',
+            class = 'Misdemeanors',
+            id = 'M.S. 2010',
+            months = 25,
+            fine = 300,
+            color = 'orange'
+        },
+		[11] = {
+            title = 'Harassment',
+            class = 'Misdemeanors',
+            id = 'M.S. 2011',
+            months = 15,
+            fine = 400,
+            color = 'orange'
+        },
+		[12] = {
+            title = 'Indecent exposure',
+            class = 'Misdemeanors',
+            id = 'M.S. 2012',
+            months = 20,
+            fine = 250,
+            color = 'orange'
+        },
+		[13] = {
+            title = 'Intimidation',
+            class = 'Misdemeanors',
+            id = 'M.S. 2013',
+            months = 10,
+            fine = 200,
+            color = 'orange'
+        },
+		[14] = {
+            title = 'Marijuana Cultivation',
+            class = 'Misdemeanors',
+            id = 'M.S. 2014',
+            months = 20,
+            fine = 400,
+            color = 'orange'
+        },
+		[15] = {
+            title = 'Obstruction of Justice',
+            class = 'Misdemeanors',
+            id = 'M.S. 2015',
+            months = 25,
+            fine = 250,
+            color = 'orange'
+        },
+		[16] = {
+            title = 'Disturbing the Peace',
+            class = 'Misdemeanors',
+            id = 'M.S. 2015',
+            months = 15,
+            fine = 300,
+            color = 'orange'
+        },
+		[17] = {
+            title = 'Providing False Information',
+            class = 'Misdemeanors',
+            id = 'M.S. 2016',
+            months = 15,
+            fine = 300,
+            color = 'orange'
+        },
+		[18] = {
+            title = 'Public Intoxication',
+            class = 'Misdemeanors',
+            id = 'M.S. 2017',
+            months = 5,
+            fine = 300,
+            color = 'orange'
+        },
+		[19] = {
+            title = 'Receiving Stolen Property',
+            class = 'Misdemeanors',
+            id = 'M.S. 2018',
+            months = 20,
+            fine = 400,
+            color = 'orange'
+        },
+		[20] = {
+            title = 'Reckless Driving',
+            class = 'Misdemeanors',
+            id = 'M.S. 2019',
+            months = 30,
+            fine = 550,
+            color = 'orange'
+        },
+		[21] = {
+            title = 'Trespassing',
+            class = 'Misdemeanors',
+            id = 'M.S. 2020',
+            months = 20,
+            fine = 150,
+            color = 'orange'
+        },
+		[22] = {
+            title = 'Verbal Threat Towards A Person',
+            class = 'Misdemeanors',
+            id = 'M.S. 2021',
+            months = 20,
+            fine = 200,
+            color = 'orange'
+        },
+    },
+    [3] = {
+        [1] = {
+            title = 'Accessory After Fact',
+            class = 'Felonies',
+            id = 'F.L. 3001',
+            months = 15,
+            fine = 500,
             color = 'red'
-        }
+        },
+		[2] = {
+            title = 'Aggravated Robbery',
+            class = 'Felonies',
+            id = 'F.L. 3002',
+            months = 25,
+            fine = 600,
+            color = 'red'
+        },
+		[3] = {
+            title = 'Aggravated Threats on a Officer/EMS',
+            class = 'Felonies',
+            id = 'F.L. 3003',
+            months = 25,
+            fine = 550,
+            color = 'red'
+        },
+		[4] = {
+            title = 'Assault',
+            class = 'Felonies',
+            id = 'F.L. 3004',
+            months = 30,
+            fine = 600,
+            color = 'red'
+        },
+		[5] = {
+            title = 'Attempted Murder',
+            class = 'Felonies',
+            id = 'F.L. 3005',
+            months = 35,
+            fine = 650,
+            color = 'red'
+        },
+		[6] = {
+            title = 'Bank Robbery',
+            class = 'Felonies',
+            id = 'F.L. 3006',
+            months = 35,
+            fine = 575,
+            color = 'red'
+        },
+		[7] = {
+            title = 'Brandishing a Weapon',
+            class = 'Felonies',
+            id = 'F.L. 3007',
+            months = 15,
+            fine = 350,
+            color = 'red'
+        },
+		[8] = {
+            title = 'Bribery',
+            class = 'Felonies',
+            id = 'F.L. 3007',
+            months = 10,
+            fine = 200,
+            color = 'red'
+        },
+		[9] = {
+            title = 'Concealing Evidence',
+            class = 'Felonies',
+            id = 'F.L. 3008',
+            months = 10,
+            fine = 200,
+            color = 'red'
+        },
+		[10] = {
+            title = 'Criminal Threats/Conspiracy',
+            class = 'Felonies',
+            id = 'F.L. 3009',
+            months = 10,
+            fine = 225,
+            color = 'red'
+        },
+		[11] = {
+            title = 'Destruction of Government Property',
+            class = 'Felonies',
+            id = 'F.L. 3010',
+            months = 15,
+            fine = 325,
+            color = 'red'
+        },
+		[12] = {
+            title = 'Driving Under The Influence',
+            class = 'Felonies',
+            id = 'F.L. 3011',
+            months = 25,
+            fine = 550,
+            color = 'red'
+        },
+		[13] = {
+            title = 'Drug Distribution',
+            class = 'Felonies',
+            id = 'F.L. 3012',
+            months = 30,
+            fine = 400,
+            color = 'red'
+        },
+		[14] = {
+            title = 'Drug Manufacturing',
+            class = 'Felonies',
+            id = 'F.L. 3013',
+            months = 30,
+            fine = 400,
+            color = 'red'
+        },
+		[15] = {
+            title = 'Drug Possession',
+            class = 'Felonies',
+            id = 'F.L. 3014',
+            months = 30,
+            fine = 400,
+            color = 'red'
+        },
+		[16] = {
+            title = 'Fleeing and Evading',
+            class = 'Felonies',
+            id = 'F.L. 3015',
+            months = 25,
+            fine = 500,
+            color = 'red'
+        },
+		[17] = {
+            title = 'Grand Theft Auto',
+            class = 'Felonies',
+            id = 'F.L. 3016',
+            months = 10,
+            fine = 300,
+            color = 'red'
+        },
+		[18] = {
+            title = 'Hit & Run',
+            class = 'Felonies',
+            id = 'F.L. 3017',
+            months = 15,
+            fine = 200,
+            color = 'red'
+        },
+		[19] = {
+            title = 'Impersonating Emergency Services',
+            class = 'Felonies',
+            id = 'F.L. 3018',
+            months = 20,
+            fine = 300,
+            color = 'red'
+        },
+		[20] = {
+            title = 'Kidnapping',
+            class = 'Felonies',
+            id = 'F.L. 3019',
+            months = 35,
+            fine = 500,
+            color = 'red'
+        },
+		[21] = {
+            title = 'Multiple Murders',
+            class = 'Felonies',
+            id = 'F.L. 3020',
+            months = 60,
+            fine = 1500,
+            color = 'red'
+        },
+		[22] = {
+            title = 'Murder',
+            class = 'Felonies',
+            id = 'F.L. 3021',
+            months = 35,
+            fine = 1000,
+            color = 'red'
+        },
+		[23] = {
+            title = 'Possession of a Class 2 Weapon',
+            class = 'Felonies',
+            id = 'F.L. 3022',
+            months = 25,
+            fine = 600,
+            color = 'red'
+        },
+		[24] = {
+            title = 'Possession of Contraband',
+            class = 'Felonies',
+            id = 'F.L. 3023',
+            months = 25,
+            fine = 600,
+            color = 'red'
+        },
+		[25] = {
+            title = 'Possession of Stolen Jewelry',
+            class = 'Felonies',
+            id = 'F.L. 3024',
+            months = 25,
+            fine = 600,
+            color = 'red'
+        },
+		[26] = {
+            title = 'Reckless Endangerment',
+            class = 'Felonies',
+            id = 'F.L. 3025',
+            months = 35,
+            fine = 500,
+            color = 'red'
+        },
+		[27] = {
+            title = 'Robbery',
+            class = 'Felonies',
+            id = 'F.L. 3026',
+            months = 30,
+            fine = 450,
+            color = 'red'
+        },
+		[28] = {
+            title = 'Robbery of an Armoured Truck',
+            class = 'Felonies',
+            id = 'F.L. 3027',
+            months = 35,
+            fine = 500,
+            color = 'red'
+        },
+		[29] = {
+            title = 'Theft of an Emergency Vehicle',
+            class = 'Felonies',
+            id = 'F.L. 3028',
+            months = 30,
+            fine = 450,
+            color = 'red'
+        },
+		[30] = {
+            title = 'Transportation Of Stolen Cargo',
+            class = 'Felonies',
+            id = 'F.L. 3029',
+            months = 25,
+            fine = 375,
+            color = 'red'
+        },
+		[31] = {
+            title = 'Unlawful Discharge of a Firearm',
+            class = 'Felonies',
+            id = 'F.L. 3030',
+            months = 40,
+            fine = 700,
+            color = 'red'
+        },
+		[32] = {
+            title = 'Unlawful Discharge of a Firearm Inside a Govt. Building',
+            class = 'Felonies',
+            id = 'F.L. 3032',
+            months = 45,
+            fine = 750,
+            color = 'red'
+        },
+		[33] = {
+            title = 'Unlawful Possession of a Firearm Without a License',
+            class = 'Felonies',
+            id = 'F.L. 3033',
+            months = 40,
+            fine = 700,
+            color = 'red'
+        },
+		[34] = {
+            title = 'Weapon Distribution',
+            class = 'Felonies',
+            id = 'F.L. 3034',
+            months = 40,
+            fine = 600,
+            color = 'red'
+        },
     }
 }
 
@@ -3522,11 +2467,11 @@ end
 
 exports('IsCidFelon', IsCidFelon) -- exports['erp_mdt']:IsCidFelon()
 
-RegisterCommand("isfelon", function(source, args, rawCommand)
+--[[RegisterCommand("isfelon", function(source, args, rawCommand)
     IsCidFelon(1998, function(res)
         print(res)
     end)
-end, false)
+end, false)]]
 
 RegisterNetEvent('erp_mdt:getPenalCode')
 AddEventHandler('erp_mdt:getPenalCode', function()
@@ -3534,13 +2479,7 @@ AddEventHandler('erp_mdt:getPenalCode', function()
 end)
 
 local policeJobs = {
-    ['lspd'] = true,
-    ['bcso'] = true,
-    ['sast'] = true,
-    ['sasp'] = true,
-    ['doc'] = true,
-    ['sapr'] = true,
-    ['pa'] = true
+    ['police'] = true,
 }
 
 RegisterNetEvent('erp_mdt:toggleDuty')
@@ -3548,29 +2487,11 @@ AddEventHandler('erp_mdt:toggleDuty', function(cid, status)
     local xPlayer = ESX.GetPlayerFromId(source)
     local player = ESX.GetPlayerFromIdentifier(cid)
     if player then
-        if player.job.name == "ambulance" and player.job.duty == 0 then
-            local mzDist = #(GetEntityCoords(GetPlayerPed(source)) - vector3(-475.15, -314.0, 62.15))
-            if mzDist > 100 then
-                TriggerClientEvent('erp_notifications:client:SendAlert', source, {
-                    type = 'error',
-                    text = 'You must be at Mount Zonah to clock in!!',
-                    length = 5000
-                })
-                TriggerClientEvent('erp_mdt:exitMDT', source)
-                return
-            end
-        end
-        if player.job.name == 'police' or player.job.name == 'ambulance' or player.job.name == 'doj' then
+        if player.job.name == 'police' or player.job.name == 'ambulance' then
             local isPolice = false
             if policeJobs[player.job.name] then
                 isPolice = true
             end
-            -- ESX.SetPlayerData(player.source, 'job', {
-                -- name = player.job.name,
-                -- grade = player.job.grade,
-                -- duty = status,
-                -- isPolice = isPolice
-            -- })
             exports.oxmysql:executeSync("UPDATE users SET duty = @duty WHERE identifier = @cid", {
                 ["@duty"] = status,
                 ["@cid"] = cid
@@ -3591,7 +2512,7 @@ AddEventHandler('erp_mdt:setCallsign', function(cid, newcallsign)
     local xPlayer = ESX.GetPlayerFromId(source)
     local player = ESX.GetPlayerFromIdentifier(cid)
     if player then
-        if player.job.name == 'police' or player.job.name == 'ambulance' or player.job.name == 'doj' then
+        if player.job.name == 'police' or player.job.name == 'ambulance' then
             SetResourceKvp(cid .. '-callsign', newcallsign)
             TriggerClientEvent('erp_mdt:updateCallsign', player.source, newcallsign)
             TriggerEvent('erp_mdt:AddLog',
@@ -3608,66 +2529,65 @@ local function fuckme(cid, incident, data, cb)
 end
 
 RegisterNetEvent('erp_mdt:saveIncident')
-AddEventHandler('erp_mdt:saveIncident',
-    function(id, title, information, tags, officers, civilians, evidence, associated, time)
-        local player = ESX.GetPlayerFromId(source)
-        if player then
-            if (player.job.name == 'police' or player.job.name == 'doj') then
-                if id == 0 then
-                    exports.oxmysql:insert(
-                        'INSERT INTO `pd_incidents` (`author`, `title`, `details`, `tags`, `officersinvolved`, `civsinvolved`, `evidence`, `time`) VALUES (@author, @title, @details, @tags, @officersinvolved, @civsinvolved, @evidence, @time)',
-                        {
-                            ["@author"] = player.name,
-                            ["@title"] = title,
-                            ["@details"] = information,
-                            ["@tags"] = json.encode(tags),
-                            ["@officersinvolved"] = json.encode(officers),
-                            ["@civsinvolved"] = json.encode(civilians),
-                            ["@evidence"] = json.encode(evidence),
-                            ["@time"] = time
-                        }, function(infoResult)
-                            if infoResult then
-                                for i = 1, #associated do
-                                    exports.oxmysql:executeSync(
-                                        'INSERT INTO `pd_convictions` (`cid`, `linkedincident`, `warrant`, `guilty`, `processed`, `associated`, `charges`, `fine`, `sentence`, `recfine`, `recsentence`, `time`) VALUES (@cid, @linkedincident, @warrant, @guilty, @processed, @associated, @charges, @fine, @sentence, @recfine, @recsentence, @time)',
-                                        {
-                                            ["@cid"] = associated[i]['Cid'],
-                                            ["@linkedincident"] = infoResult,
-                                            ["@warrant"] = associated[i]['Warrant'],
-                                            ["@guilty"] = associated[i]['Guilty'],
-                                            ["@processed"] = associated[i]['Processed'],
-                                            ["@associated"] = associated[i]['Isassociated'],
-                                            ["@charges"] = json.encode(associated[i]['Charges']),
-                                            ["@fine"] = tonumber(associated[i]['Fine']),
-                                            ["@sentence"] = tonumber(associated[i]['Sentence']),
-                                            ["@recfine"] = tonumber(associated[i]['recfine']),
-                                            ["@recsentence"] = tonumber(associated[i]['recsentence']),
-                                            ["@time"] = time
-                                        })
-                                end
-                                TriggerClientEvent('erp_mdt:updateIncidentDbId', player.source, infoResult)
-                                -- TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate ("..plate..") was added to the vehicle information database by "..player['name'])
+AddEventHandler('erp_mdt:saveIncident', function(id, title, information, tags, officers, civilians, evidence, associated, time)
+    local player = ESX.GetPlayerFromId(source)
+    if player then
+        if (player.job.name == 'police' or player.job.name == 'doj') then
+            if id == 0 then
+                exports.oxmysql:insert(
+                    'INSERT INTO `pd_incidents` (`author`, `title`, `details`, `tags`, `officersinvolved`, `civsinvolved`, `evidence`, `time`) VALUES (@author, @title, @details, @tags, @officersinvolved, @civsinvolved, @evidence, @time)',
+                    {
+                        ["@author"] = player.name,
+                        ["@title"] = title,
+                        ["@details"] = information,
+                        ["@tags"] = json.encode(tags),
+                        ["@officersinvolved"] = json.encode(officers),
+                        ["@civsinvolved"] = json.encode(civilians),
+                        ["@evidence"] = json.encode(evidence),
+                        ["@time"] = time
+                    }, function(infoResult)
+                        if infoResult then
+                            for i = 1, #associated do
+                                exports.oxmysql:executeSync(
+                                    'INSERT INTO `pd_convictions` (`cid`, `linkedincident`, `warrant`, `guilty`, `processed`, `associated`, `charges`, `fine`, `sentence`, `recfine`, `recsentence`, `time`) VALUES (@cid, @linkedincident, @warrant, @guilty, @processed, @associated, @charges, @fine, @sentence, @recfine, @recsentence, @time)',
+                                    {
+                                        ["@cid"] = associated[i]['Cid'],
+                                        ["@linkedincident"] = infoResult,
+                                        ["@warrant"] = associated[i]['Warrant'],
+                                        ["@guilty"] = associated[i]['Guilty'],
+                                        ["@processed"] = associated[i]['Processed'],
+                                        ["@associated"] = associated[i]['Isassociated'],
+                                        ["@charges"] = json.encode(associated[i]['Charges']),
+                                        ["@fine"] = tonumber(associated[i]['Fine']),
+                                        ["@sentence"] = tonumber(associated[i]['Sentence']),
+                                        ["@recfine"] = tonumber(associated[i]['recfine']),
+                                        ["@recsentence"] = tonumber(associated[i]['recsentence']),
+                                        ["@time"] = time
+                                    })
                             end
-                        end)
-                elseif id > 0 then
-                    exports.oxmysql:executeSync(
-                        "UPDATE pd_incidents SET title = @title, details = @details, civsinvolved = @civsinvolved, tags = @tags, officersinvolved = @officersinvolved, evidence = @evidence WHERE id = @id",
-                        {
-                            ["@title"] = title,
-                            ["@details"] = information,
-                            ["@tags"] = json.encode(tags),
-                            ["@officersinvolved"] = json.encode(officers),
-                            ["@civsinvolved"] = json.encode(civilians),
-                            ["@evidence"] = json.encode(evidence),
-                            ["@id"] = id
-                        })
-                    for i = 1, #associated do
-                        TriggerEvent('erp_mdt:handleExistingConvictions', associated[i], id, time)
-                    end
+                            TriggerClientEvent('erp_mdt:updateIncidentDbId', player.source, infoResult)
+                            -- TriggerEvent('erp_mdt:AddLog', "A vehicle with the plate ("..plate..") was added to the vehicle information database by "..player['name'])
+                        end
+                    end)
+            elseif id > 0 then
+                exports.oxmysql:executeSync(
+                    "UPDATE pd_incidents SET title = @title, details = @details, civsinvolved = @civsinvolved, tags = @tags, officersinvolved = @officersinvolved, evidence = @evidence WHERE id = @id",
+                    {
+                        ["@title"] = title,
+                        ["@details"] = information,
+                        ["@tags"] = json.encode(tags),
+                        ["@officersinvolved"] = json.encode(officers),
+                        ["@civsinvolved"] = json.encode(civilians),
+                        ["@evidence"] = json.encode(evidence),
+                        ["@id"] = id
+                    })
+                for i = 1, #associated do
+                    TriggerEvent('erp_mdt:handleExistingConvictions', associated[i], id, time)
                 end
             end
         end
-    end)
+    end
+end)
 
 AddEventHandler('erp_mdt:handleExistingConvictions', function(data, incidentid, time)
     exports.oxmysql:execute('SELECT * FROM pd_convictions WHERE cid = @cid AND linkedincident = @linkedincident', {
@@ -3864,8 +2784,9 @@ AddEventHandler('erp_mdt:sendMessage', function(message, time)
                 ["@id"] = player['identifier'] -- % wildcard, needed to search for all alike results
             }, function(data)
                 if data and data[1] then
+                    --print(json.encode(data))
                     local ProfilePicture = PpPpPpic(data[1]['sex'], data[1]['profilepic'])
-                    local callsign = GetCallsign(player['identifier'])
+                    local callsign = GetCallsign(player['identifier']) --Need to manually set in DB or it errors out
                     local Item = {
                         profilepic = ProfilePicture,
                         callsign = callsign[1].callsign,
@@ -3888,7 +2809,7 @@ AddEventHandler('erp_mdt:open', function(source)
     local xPlayer = ESX.GetPlayerFromId(source)
     if xPlayer then
         if xPlayer.job and
-            (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance' or xPlayer.job.name == 'doj')) then
+            (xPlayer.job.name == 'police' or (xPlayer.job.name == 'ambulance')) then
             TriggerClientEvent('erp_mdt:dashboardMessages', xPlayer['source'], dispatchmessages)
         end
     end
@@ -3933,177 +2854,5 @@ end)
 CreateThread(function()
     Wait(1800000)
     dispatchmessages = {}
-end)
-
-RegisterNetEvent('erp_mdt:setRadio')
-AddEventHandler('erp_mdt:setRadio', function(cid, newcallsign)
-    local xPlayer = ESX.GetPlayerFromId(source)
-    if xPlayer then
-        if xPlayer.job.name == 'police' or xPlayer.job.name == 'ambulance' or xPlayer.job.name == 'doj' then
-            local tgtPlayer = ESX.GetPlayerFromIdentifier(cid)
-            if tgtPlayer then
-                TriggerClientEvent('erp_mdt:setRadio', tgtPlayer['source'], newcallsign, xPlayer.name)
-                TriggerClientEvent('erp_notifications:client:SendAlert', xPlayer['source'], {
-                    type = 'success',
-                    text = 'Radio updated.',
-                    length = 5000
-                })
-            end
-        end
-    end
-end)
-
-local Impound = {}
-
-function isRequestVehicle(vehId)
-    local found = false
-    for i = 1, #Impound do
-        if Impound[i]['vehicle'] == vehId then
-            found = true
-            Impound[i] = nil
-            break
-        end
-    end
-    return found
-end
-exports('isRequestVehicle', isRequestVehicle) -- exports['erp_mdt']:isRequestVehicle()
-
-RegisterNetEvent('erp_mdt:impoundVehicle')
-AddEventHandler('erp_mdt:impoundVehicle', function(sentInfo, sentVehicle)
-    local player = ESX.GetPlayerFromId(source)
-    if player then
-        if player.job.name == 'police' then
-            if sentInfo and type(sentInfo) == 'table' then
-                local plate, linkedreport, fee, time = sentInfo['plate'], sentInfo['linkedreport'], sentInfo['fee'],
-                    sentInfo['time']
-                if (plate and linkedreport and fee and time) then
-                    exports.oxmysql:execute("SELECT id, plate FROM `owned_vehicles` WHERE plate=:plate LIMIT 1", {
-                        plate = string.gsub(plate, "^%s*(.-)%s*$", "%1")
-                    }, function(vehicle)
-                        if vehicle and vehicle[1] then
-                            local data = vehicle[1]
-                            exports.oxmysql:insert(
-                                'INSERT INTO `impound` (`vehicleid`, `linkedreport`, `fee`, `time`) VALUES (:vehicleid, :linkedreport, :fee, :time)',
-                                {
-                                    vehicleid = data['id'],
-                                    linkedreport = linkedreport,
-                                    fee = fee,
-                                    time = os.time() + (time * 60)
-                                }, function(res)
-                                    -- notify?
-                                    local data = {
-                                        vehicleid = data['id'],
-                                        plate = plate,
-                                        beingcollected = 0,
-                                        vehicle = sentVehicle,
-                                        officer = player['name'],
-                                        number = player['phone_number'],
-                                        time = os.time() * 1000,
-                                        src = player['source']
-                                    }
-                                    local vehicle = NetworkGetEntityFromNetworkId(sentVehicle)
-                                    FreezeEntityPosition(vehicle, true)
-                                    table.insert(Impound, data)
-                                    TriggerClientEvent('erp_mdt:notifyMechanics', -1, data)
-                                end)
-                        end
-                    end)
-                end
-            end
-        end
-    end
-end)
-
--- erp_mdt:getImpoundVehicles
-
-RegisterNetEvent('erp_mdt:getImpoundVehicles')
-AddEventHandler('erp_mdt:getImpoundVehicles', function()
-    TriggerClientEvent('erp_mdt:getImpoundVehicles', source, Impound)
-end)
-
-RegisterNetEvent('erp_mdt:collectVehicle')
-AddEventHandler('erp_mdt:collectVehicle', function(sentId)
-    local player = ESX.GetPlayerFromId(source)
-    if player then
-        local source = source
-        for i = 1, #Impound do
-            local id = Impound[i]['vehicleid']
-            if tostring(id) == tostring(sentId) then
-                local vehicle = NetworkGetEntityFromNetworkId(Impound[i]['vehicle'])
-                if not DoesEntityExist(vehicle) then
-                    TriggerClientEvent('erp_phone:sendNotification', source, {
-                        img = 'vehiclenotif.png',
-                        title = "Impound",
-                        content = "This vehicle has already been impounded.",
-                        time = 5000
-                    })
-                    Impound[i] = nil
-                    return
-                end
-                local collector = Impound[i]['beingcollected']
-                if collector ~= 0 and GetPlayerPing(collector) >= 0 then
-                    TriggerClientEvent('erp_phone:sendNotification', source, {
-                        img = 'vehiclenotif.png',
-                        title = "Impound",
-                        content = "This vehicle is being collected.",
-                        time = 5000
-                    })
-                    return
-                end
-                Impound[i]['beingcollected'] = source
-                TriggerClientEvent('erp_mdt:collectVehicle', source, GetEntityCoords(vehicle))
-                TriggerClientEvent('erp_phone:sendNotification', Impound[i]['src'], {
-                    img = 'vehiclenotif.png',
-                    title = "Impound",
-                    content = player['name'] .. " is collecing the vehicle with plate " .. Impound[i]['plate'] ..
-                        "!",
-                    time = 5000
-                })
-                break
-            end
-        end
-    end
-end)
-
-RegisterNetEvent('erp_mdt:removeImpound')
-AddEventHandler('erp_mdt:removeImpound', function(plate)
-    local player = ESX.GetPlayerFromId(source)
-    if player then
-        if player.job.name == 'police' then
-            exports.oxmysql:execute("SELECT id, plate FROM `owned_vehicles` WHERE plate=:plate LIMIT 1", {
-                plate = string.gsub(plate, "^%s*(.-)%s*$", "%1")
-            }, function(vehicle)
-                if vehicle and vehicle[1] then
-                    local data = vehicle[1]
-                    exports.oxmysql:executeSync("DELETE FROM `impound` WHERE vehicleid=:vehicleid", {
-                        vehicleid = data['id']
-                    })
-                end
-            end)
-        end
-    end
-end)
-
-RegisterNetEvent('erp_mdt:statusImpound')
-AddEventHandler('erp_mdt:statusImpound', function(plate)
-    local player = ESX.GetPlayerFromId(source)
-    if player then
-        if player.job.name == 'police' then
-            exports.oxmysql:execute("SELECT id, plate FROM `owned_vehicles` WHERE plate=:plate LIMIT 1", {
-                plate = string.gsub(plate, "^%s*(.-)%s*$", "%1")
-            }, function(vehicle)
-                if vehicle and vehicle[1] then
-                    local data = vehicle[1]
-                    exports.oxmysql:execute("SELECT * FROM `impound` WHERE vehicleid=:vehicleid LIMIT 1", {
-                        vehicleid = data['id']
-                    }, function(impoundinfo)
-                        if impoundinfo and impoundinfo[1] then
-                            TriggerClientEvent('erp_mdt:statusImpound', player['source'], impoundinfo[1], plate)
-                        end
-                    end)
-                end
-            end)
-        end
-    end
 end)
 
