@@ -7,7 +7,7 @@ version '1.0.0'
 
 lua54 'yes'
 
-
+shared_script {'@es_extended/imports.lua'}
 server_script 'sv_main.lua'
 client_script 'cl_main.lua'
 
