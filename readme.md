@@ -1,3 +1,4 @@
-Matching Dispatch: https://github.com/stuxxyofficial/erp_dispatch
+# Updated to ESX Legacy style coding
 
-W.I.P ESX legacy conversion
+Made changes for my server and how I see it fit in my server. 
+
