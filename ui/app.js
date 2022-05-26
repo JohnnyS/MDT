@@ -503,8 +503,8 @@ $(document).ready(() => {
             info = "drive_truck";
         } else if (type == "Hunting") {
             info = "hunting";
-        } else if (type == "Pilot") {
-            info = "pilot";
+        } else if (type == "Fishing") {
+            info = "fishing";
         } else if (type == "Weapon") {
             info = "weapon";
         } else {
@@ -2118,13 +2118,13 @@ $(document).ready(() => {
                     "info": cid,
                     "status": ""
                 },
-                {
-                    "className": "set-radio",
-                    "icon": "fas fa-broadcast-tower",
-                    "text": "Set Radio",
-                    "info": cid,
-                    "status": ""
-                },
+                //{
+                    //"className": "set-radio",
+                    //"icon": "fas fa-broadcast-tower",
+                    //"text": "Set Radio",
+                   // "info": cid,
+                    //"status": ""
+                //},
                 {
                     "className": "set-waypoint",
                     "icon": "fas fa-map-marker-alt",
@@ -2456,7 +2456,7 @@ $(document).ready(() => {
     })
 
     function JobColors(sentJob) {
-        if (sentJob) {
+        if (sentJob) { //This seems to change the colors and text for diff jobs, not needed for us unless sheriffs gets added
             if (sentJob == 'lspd' || sentJob == 'bcso' || sentJob == 'sast' || sentJob == 'sasp' || sentJob == 'doc' || sentJob == 'sapr' || sentJob == 'pa') {
                 document.documentElement.style.setProperty('--color-1', '#1E3955');
                 document.documentElement.style.setProperty('--color-2', '#213F5F');
@@ -2492,21 +2492,21 @@ $(document).ready(() => {
                 $(".manage-profile-name-input-2").attr("readonly", true)
                 $("#reports-officers-involved-tag-title").html("Officers Involved")
                 $(".roster-iframe").attr("src", "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdoer41P1HV_ErH6W2oYblUdsrNY92FtBKq1kZ32x1BhGLxUnnlcB_cNkML5zodI_bkPvmecw27Uiv/pubhtml?widget=true&amp;headers=false")
-            } else if (sentJob == 'ambulance') {
+            } else if (sentJob == 'ambulance') { //Main thing for EMS here
                 $("#home-warrants-container").fadeOut(0)
                 $("#home-reports-container").fadeIn(0)
-                document.documentElement.style.setProperty('--color-1', '#00a3d0');
-                document.documentElement.style.setProperty('--color-2', '#017190');
-                document.documentElement.style.setProperty('--color-3', '#017190');
-                document.documentElement.style.setProperty('--color-4', '#025269');
-                document.documentElement.style.setProperty('--color-5', '#023f50');
-                document.documentElement.style.setProperty('--color-6', '#023f50');
-                document.documentElement.style.setProperty('--color-7', 'rgb(2, 63, 80)');
-                document.documentElement.style.setProperty('--color-8', '#00a3d0');
-                document.documentElement.style.setProperty('--color-9', '#eaeaea');
-                document.documentElement.style.setProperty('--color-10', '#444444');
+                document.documentElement.style.setProperty('--color-1', '#4B4949'); //The main boxes or shapes
+                document.documentElement.style.setProperty('--color-2', '#FF0000'); //Shape that holds the time
+                document.documentElement.style.setProperty('--color-3', '#FF0000'); //All the lines on the bottom part and colored of the selected tab
+                document.documentElement.style.setProperty('--color-4', '#292121'); //Title boxes like dispatch bulletin board
+                document.documentElement.style.setProperty('--color-5', '#807D7D'); //Boxex that get in bulletin board and reports
+                document.documentElement.style.setProperty('--color-6', '#C100FF'); // ?????
+                document.documentElement.style.setProperty('--color-7', 'rgb(82, 81, 83)'); //Message dispatch box
+                document.documentElement.style.setProperty('--color-8', '#00a3d0'); // ?????
+                document.documentElement.style.setProperty('--color-9', '#565050'); //Main Background color
+                document.documentElement.style.setProperty('--color-10', '#858484'); //Refresh button
                 $(".badge-logo").attr('src', 'img/ems_badge.png');
-                $(".header-title").html("MOUNT ZONAH MEDICAL CENTER");
+                $(".header-title").html("Pillbox Hill Medical Center");
                 $(".quote-span").html("The simplest explanation is almost always somebody screwed up.");
                 $(".bolo-nav-item").html("ICU");
                 $(".bolos-search-title").html("ICU Check-ins");
@@ -2527,7 +2527,7 @@ $(document).ready(() => {
                 $(".dispatch-comms-container").fadeIn(0)
                 $(".manage-profile-name-input-1").attr("readonly", true)
                 $(".manage-profile-name-input-2").attr("readonly", true)
-                $(".roster-iframe").attr("src", "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIzcmRoaChLj8r25FtoUe2xpbghdFMk9Qxbxk1vwbI59MlFKqoIu2_KOsI5DclLMEzpx8rr6OLaZch/pubhtml?widget=true&amp;headers=false%22%3E")
+                $(".roster-iframe").attr("src", "https://docs.google.com/spreadsheets/d/e/2PACX-1vTAzDoPO8yZywXck-NiVTCSFcXPLhs6YZ0X86WQyi5OyM6aA14da8oN4zsU2X3iQ9RT5ag7u7XPzNI8/pubhtml?widget=true&amp;headers=false")
             } else if (sentJob == 'doj') {
                 document.documentElement.style.setProperty('--color-1', '#553a1e');
                 document.documentElement.style.setProperty('--color-2', '#5f4321');
@@ -2646,11 +2646,11 @@ $(document).ready(() => {
             } else {
                 hunting = "red-tag"
             }
-            let pilot = ""
-            if (table["pilot"] == true) {
-                pilot = "green-tag"
+            let fishing = ""
+            if (table["fishing"] == true) {
+                fishing = "green-tag"
             } else {
-                pilot = "red-tag"
+                fishing = "red-tag"
             }
             $(".licenses-holder").empty();
             $('.licenses-holder').prepend(
@@ -2661,7 +2661,7 @@ $(document).ready(() => {
                 <div class="license-tag ${truck} truck" data-type="truck">Truck</div>
                 <div class="license-tag ${weapon} weapon" data-type="weapon">Weapon</div>
                 <div class="license-tag ${hunting} hunting" data-type="hunting">Hunting</div>
-                <div class="license-tag ${pilot} pilot" data-type="pilot">Pilot</div>
+                <div class="license-tag ${fishing} fishing" data-type="fishing">Fishing</div>
             `);
             $(".tags-holder").empty();
             $.each(table["tags"], function(index, value) {
@@ -2702,7 +2702,7 @@ $(document).ready(() => {
                 let name = value.firstname + " " + value.lastname
                 let weapon = ""
                 let hunting = ""
-                let pilot = ""
+                let fishing = ""
                 let theory = ""
                 let car = ""
                 let bike = ""
@@ -2719,10 +2719,10 @@ $(document).ready(() => {
                 } else {
                     hunting = "red-tag";
                 }
-                if (value.pilot == true) {
-                    pilot = "green-tag";
+                if (value.fishing == true) {
+                    fishing = "green-tag";
                 } else {
-                    pilot = "red-tag";
+                    fishing = "red-tag";
                 }
                 if (value.theory == true) {
                     theory = "green-tag";
@@ -2770,7 +2770,7 @@ $(document).ready(() => {
                                 <div class="profile-tag ${truck}">Truck</div>
                                 <div class="profile-tag ${weapon}">Weapon</div>
                                 <div class="profile-tag ${hunting}">Hunting</div>
-                                <div class="profile-tag ${pilot}">Pilot</div>
+                                <div class="profile-tag ${fishing}">Fishing</div>
                             </div>
                         </div>
                         <div class="profile-bottom-info">
@@ -3408,10 +3408,9 @@ $(document).ready(() => {
                         <div class="dmv-item-title">${value.model}</div>
                             <div class="dmv-tags">
                                 <div class="dmv-tag ${paint}-color">${value.colorName}</div>
-                                <div class="dmv-tag ${impound}">Impound</div>
+                                
                                 <div class="dmv-tag ${bolo}">BOLO</div>
-                                <div class="dmv-tag ${stolen}">Stolen</div>
-                                <div class="dmv-tag ${codefive}">Code 5</div>
+                                
                             </div>
                         </div>
                         <div class="dmv-bottom-info">
@@ -3459,10 +3458,10 @@ $(document).ready(() => {
                 stolen = "green-tag"
             }
 
-            $('.vehicle-tags').append(`<div class="vehicle-tag ${impound} impound-tag">Impound</div>`);
+            //$('.vehicle-tags').append(`<div class="vehicle-tag ${impound} impound-tag">Impound</div>`);
             $('.vehicle-tags').append(`<div class="vehicle-tag ${bolo}">BOLO</div>`);
-            $('.vehicle-tags').append(`<div class="vehicle-tag ${codefive} code5-tag">Code 5</div>`);
-            $('.vehicle-tags').append(`<div class="vehicle-tag ${stolen} stolen-tag">Stolen</div>`);
+            //$('.vehicle-tags').append(`<div class="vehicle-tag ${codefive} code5-tag">Code 5</div>`);
+           // $('.vehicle-tags').append(`<div class="vehicle-tag ${stolen} stolen-tag">Stolen</div>`);
             $(".vehicle-info-imageurl-input").val(table["image"]);
         } else if (e.type == "updateVehicleDbId") {
             $(".vehicle-information-title-holder").data("dbid", Number(e.data));
@@ -3557,168 +3556,7 @@ $(document).ready(() => {
                 `)
             })
 
-            $.each(bcso, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radioback = "var(--color-3)"
-                var radio = "0"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    PoliceCount = PoliceCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-bcso">BCSO</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
 
-            $.each(sast, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radioback = "var(--color-3)"
-                var radio = "0"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    PoliceCount = PoliceCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-sast">SAST</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
-
-            $.each(sasp, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radioback = "var(--color-3)"
-                var radio = "0"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    PoliceCount = PoliceCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-sasp">SASP</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
-
-            $.each(doc, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radio = "0"
-                var radioback = "var(--color-3)"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    DocCount = DocCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-doc">DOC</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
-
-            $.each(sapr, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radio = "0"
-                var radioback = "var(--color-3)"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    PoliceCount = PoliceCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-sapr">SAPR</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
-
-            $.each(PublicAffairs, function(index, value) {
-                var status = "10-8"
-                var statuscolor = "green-status"
-                var radio = "0"
-                var radioback = "var(--color-3)"
-                var callsign = "000"
-                if (value.duty == 0) {
-                    status = "10-7"
-                    statuscolor = "yellow-status"
-                } else if (value.duty == 1) {
-                    PaCount = PaCount + 1
-                }
-                if (value.radio) { radio = value.radio }
-                if (value.sig100) {
-                    radioback = "#7b2c2c"
-                }
-                if (value.callsign) { callsign = value.callsign }
-
-                $('.active-unit-list').prepend(`
-                <div class="active-unit-item" data-id="${value.cid}">
-                    <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-pa">PA</div>
-                    <div class="unit-name">(${callsign}) ${value.name}</div>
-                    <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
-                </div>
-                `)
-            })
 
             $.each(ems, function(index, value) {
                 var status = "10-8"
@@ -3740,7 +3578,7 @@ $(document).ready(() => {
                 $('.active-unit-list').prepend(`
                 <div class="active-unit-item" data-id="${value.cid}">
                     <div class="unit-status ${statuscolor}">${status}</div>
-                    <div class="unit-job active-info-job-ambulance">MZ</div>
+                    <div class="unit-job active-info-job-ambulance">EMS</div>
                     <div class="unit-name">(${callsign}) ${value.name}</div>
                     <div class="unit-radio" style="background-color: ${radioback};">${radio}</div>
                 </div>
@@ -3749,8 +3587,8 @@ $(document).ready(() => {
 
             $("#police-count").html(PoliceCount)
             $("#ems-count").html(EmsCount)
-            $("#doc-count").html(DocCount)
-            $("#pa-count").html(PaCount)
+            //$("#doc-count").html(DocCount)
+            //$("#pa-count").html(PaCount)
 
         }
     });
